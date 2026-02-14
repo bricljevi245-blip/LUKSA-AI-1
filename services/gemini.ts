@@ -1,59 +1,72 @@
 import { GoogleGenAI } from "@google/genai";
 
-// Varno pridobivanje API ključa za okolja, kot je Hostinger.
-// V brskalniku 'process' običajno ne obstaja, kar povzroči napako.
-const getApiKey = () => {
-  try {
-    // Poskusimo dostopati do process.env, če obstaja (npr. med buildom)
-    // Če process ni definiran, bo vrglo napako, ki jo ujamemo.
-    if (typeof process !== 'undefined' && process.env && process.env.API_KEY) {
-      return process.env.API_KEY;
-    }
-    return undefined;
-  } catch (e) {
-    // Ignoriramo napako, če process ni definiran
-    return undefined;
+// ---------------------------------------------------------------------------
+// NAVODILA ZA NAMESTITEV API KLJUČA (HOSTINGER / STATIC HOSTING):
+// Če vaše okoljske spremenljivke ne delujejo, prilepite svoj Gemini API ključ
+// neposredno spodaj med narekovaje.
+// Primer: const HARDCODED_KEY = "AIzaSy...";
+// ---------------------------------------------------------------------------
+const HARDCODED_KEY: string = ""; 
+
+// Varno pridobivanje API ključa za različna okolja
+const getApiKey = (): string | undefined => {
+  // 1. Prednost ima ročno vnesen ključ (najhitrejša rešitev za uporabnika)
+  if (HARDCODED_KEY && HARDCODED_KEY.length > 10) {
+    return HARDCODED_KEY;
   }
+
+  try {
+    // 2. Preverjanje Vite / Modern Frontend standarda (import.meta.env)
+    // Uporabimo 'as any', da TypeScript ne javlja napak, če types niso nastavljeni
+    const meta = (import.meta as any);
+    if (meta && meta.env) {
+      if (meta.env.VITE_API_KEY) return meta.env.VITE_API_KEY;
+      if (meta.env.API_KEY) return meta.env.API_KEY;
+    }
+    
+    // 3. Preverjanje Node / Webpack standarda (process.env)
+    if (typeof process !== 'undefined' && process.env) {
+      if (process.env.API_KEY) return process.env.API_KEY;
+      if (process.env.REACT_APP_API_KEY) return process.env.REACT_APP_API_KEY;
+    }
+  } catch (e) {
+    console.warn("Napaka pri branju okoljskih spremenljivk:", e);
+  }
+
+  // Če nič od zgoraj ne deluje, vrnemo undefined
+  return undefined;
 };
 
 const apiKey = getApiKey();
-// Inicializiramo AI samo če imamo ključ.
 const ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
 
+// Sistemska navodila za AI
 const SYSTEM_INSTRUCTION = `
-Sistemska navodila za LUKSA AI Assistant
+VLOGA: Ste "LUKSA AI Asistent", napreden AI prodajni svetovalec za agencijo LUKSA AI.
+CILJ: Vaša primarna naloga je navdušiti obiskovalca in PRIDOBITI NJEGOV E-MAIL NASLOV za pošiljanje ponudbe ali primera.
 
-Identiteta: 
-Ste uradni AI asistent agencije LUKSA AI.
-Ton: Profesionalen, futurističen, a topel in gostoljubem.
-Glavni cilj: Navdušiti uporabnika nad našimi storitvami in pridobiti njihov kontakt (email).
+TON KOMUNIKACIJE:
+- Futurističen, a prijazen.
+- Kratek, jedrnat in usmerjen v akcijo.
+- Uporabljajte emojije zmerno (🚀, ✨, 🤖).
 
-PRAVILA ZA VAROVANJE POSLOVNIH SKRIVNOSTI (PREPOVEDANO RAZKRIVANJE ORODIJ):
-1. STROGO PREPOVEDANO je omenjanje specifičnih orodij, kot so "Midjourney", "Stable Diffusion", "DALL-E", "Gemini", "ChatGPT" ali katera koli druga blagovna znamka AI modelov.
-2. Namesto imen orodij VEDNO uporabljajte izraze kot: 
-   - "naši napredni interni modeli"
-   - "sistem nevronskih mrež po meri"
-   - "hiper-realistična generativna tehnologija"
-   - "LUKSA AI optimizirani algoritmi"
-3. Če uporabnik vpraša po orodjih, odgovorite: "Naša tehnologija temelji na unikatni kombinaciji večih naprednih AI modelov, ki smo jih optimizirali za specifične potrebe trženja. To je naša 'skrivna sestavina', ki zagotavlja vrhunsko kakovost."
+PRAVILA:
+1. Ne omenjajte tehničnih imen modelov (Gemini, GPT, itd.). Recite "naši nevro-algoritmi".
+2. ČE UPORABNIK VPIŠE EMAIL: Se toplo zahvalite in potrdite, da je shranjen.
+3. ČE UPORABNIK VPRAŠA ZA CENO: Povejte okvirno ("do 80% ceneje od studia"), a poudarite, da za točen izračun potrebujete opis projekta in kontakt.
+4. "CTA TIME": Ko sistem javi, da je čas za CTA, recite nekaj takega: "Da vam lahko pošljem ta koncept, mi prosim zaupajte vaš e-naslov."
 
-PRAVILA ZA CTA (Call To Action):
-1. Vaš cilj je konverzija. Ne bodite le 'chat bot', bodite prodajalec.
-2. Če prejmete sistemsko navodilo [CTA TIME], MORATE v svoj odgovor vključiti povabilo, npr.:
-   - "Mimogrede, če želite videti, kako bi to izgledalo na vašem primeru, mi lahko zaupate svoj e-naslov in poslali vam bomo brezplačen koncept."
-   - "Ste pripravljeni na naslednji korak? Vpišite svoj email in dogovorili se bomo za kratek posvet."
-3. Če uporabnik poda email, se zahvalite in potrdite, da bo ekipa stopila v stik.
-
-Baza znanja:
-- Storitve: AI fotografija izdelkov, AI influencerji, spletne strani.
-- Prednosti: 80% ceneje od studijskega slikanja, neomejene lokacije, hitra izvedba.
+STORITVE:
+- AI Produktna fotografija (brez pošiljanja izdelkov).
+- AI Influencerji (konsistentni liki).
+- Spletne strani prihodnosti.
 `;
 
 export const sendMessageToGemini = async (message: string, history: { role: string; parts: { text: string }[] }[], isCtaTurn: boolean = false) => {
+  // Preverjanje inicializacije
   if (!ai) {
-    console.warn("Gemini API not initialized. Missing API Key.");
-    // Vrnemo generičen odgovor, da aplikacija ne zmrzne
-    return "Pozdravljeni! Trenutno posodabljamo naše nevronske povezave. Prosimo, pišite nam neposredno na luksaaiagencija@gmail.com ali izpolnite kontaktni obrazec spodaj za takojšnjo pomoč.";
+    console.error("Gemini API Key missing.");
+    return "Oprostite, povezava z AI jedrom ni vzpostavljena. (Manjka API Ključ - preverite services/gemini.ts)";
   }
 
   try {
@@ -68,16 +81,16 @@ export const sendMessageToGemini = async (message: string, history: { role: stri
       }))
     });
 
-    // Vstavimo navodilo za CTA, če je pravi čas (nevidno uporabniku)
-    let finalMessage = message;
+    // Dodajanje skritega navodila za CTA, če je pravi čas
+    let finalPrompt = message;
     if (isCtaTurn) {
-      finalMessage += "\n\n[SYSTEM INSTRUCTION: This is the appropriate time to gently ask for the user's email address (CTA). Do it naturally as part of your helpful response.]";
+      finalPrompt += "\n\n[SYSTEM INSTRUCTION: Now is the perfect moment to ask for the user's email address naturally. Do it.]";
     }
 
-    const result = await chat.sendMessage({ message: finalMessage });
+    const result = await chat.sendMessage({ message: finalPrompt });
     return result.text;
   } catch (error) {
     console.error("Gemini API Error:", error);
-    return "Zaznal sem motnjo v komunikacijskem kanalu. Prosim, poskusite ponovno ali uporabite kontaktni obrazec.";
+    return "Zaznal sem motnjo v komunikaciji. Prosim, poskusite ponovno.";
   }
 };

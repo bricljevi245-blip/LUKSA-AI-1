@@ -8,35 +8,69 @@ interface Message {
 
 const ChatWidget: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [hasInteracted, setHasInteracted] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
-    { role: 'model', text: "Pozdravljeni! Sem LUKSA AI asistent. Kako vam lahko danes pomagam preoblikovati vašo blagovno znamko?" }
+    { role: 'model', text: "Pozdravljeni! 👋 Sem LUKSA AI. Kako lahko danes pospešim vaš posel z umetno inteligenco?" }
   ]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [emailCaptured, setEmailCaptured] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // Samodejno odpiranje po 5 sekundah
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (!hasInteracted && !isOpen) {
+        setIsOpen(true);
+      }
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, [hasInteracted, isOpen]);
+
+  // Avtomatsko pomikanje na dno
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   useEffect(() => {
-    scrollToBottom();
-  }, [messages, isOpen]);
+    if (isOpen) {
+      scrollToBottom();
+    }
+  }, [messages, isOpen, isLoading]);
+
+  // Preverjanje, če sporočilo vsebuje email
+  const containsEmail = (text: string) => {
+    return /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/.test(text);
+  };
 
   const handleSend = async () => {
     if (!inputValue.trim()) return;
 
     const userMsg = inputValue;
     setInputValue('');
-    setMessages(prev => [...prev, { role: 'user', text: userMsg }]);
+    setHasInteracted(true);
+    
+    // Dodaj uporabnikovo sporočilo
+    const newMessages = [...messages, { role: 'user', text: userMsg } as Message];
+    setMessages(newMessages);
     setIsLoading(true);
 
-    try {
-      // Izračunaj število sporočil za sprožitev CTA vsako 3. sporočilo
-      const userMessageCount = messages.filter(m => m.role === 'user').length + 1;
-      const isCtaTurn = userMessageCount > 0 && userMessageCount % 3 === 0;
+    // Preveri, če je uporabnik vpisal email
+    if (containsEmail(userMsg) && !emailCaptured) {
+      setEmailCaptured(true);
+      // Tukaj bi lahko poslali email na backend/servis
+      setTimeout(() => {
+         // Simulacija shranjevanja
+         console.log("Email captured:", userMsg);
+      }, 500);
+    }
 
-      // Pripravi zgodovino za API
+    try {
+      // Logika za CTA (vsako 3. sporočilo, če še nimamo emaila)
+      const userMsgCount = newMessages.filter(m => m.role === 'user').length;
+      const isCtaTurn = !emailCaptured && (userMsgCount % 3 === 0);
+
+      // Priprava zgodovine za API (brez zadnjega sporočila, ki ga pošiljamo ločeno)
       const history = messages.map(m => ({
         role: m.role,
         parts: [{ text: m.text }]
@@ -44,7 +78,7 @@ const ChatWidget: React.FC = () => {
 
       const responseText = await sendMessageToGemini(userMsg, history, isCtaTurn);
       
-      setMessages(prev => [...prev, { role: 'model', text: responseText || "Prišlo je do napake pri komunikaciji." }]);
+      setMessages(prev => [...prev, { role: 'model', text: responseText || "Napaka pri povezavi." }]);
     } catch (e) {
       console.error("Chat Error:", e);
       setMessages(prev => [...prev, { role: 'model', text: "Oprostite, trenutno ne morem vzpostaviti povezave." }]);
@@ -54,82 +88,119 @@ const ChatWidget: React.FC = () => {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-[100] flex flex-col items-end print:hidden">
+    <div className="fixed bottom-4 right-4 z-[100] flex flex-col items-end font-sans print:hidden">
       {/* Chat Window */}
       {isOpen && (
-        <div className="mb-4 w-[90vw] md:w-[350px] h-[500px] bg-luksa-dark/95 backdrop-blur-xl border border-luksa-cyan/30 rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-fade-in-up origin-bottom-right transition-all">
+        <div className="mb-4 w-[90vw] md:w-[380px] h-[500px] md:h-[600px] bg-luksa-dark/95 backdrop-blur-xl border border-luksa-cyan/30 rounded-2xl shadow-[0_0_50px_rgba(0,0,0,0.6)] flex flex-col overflow-hidden animate-fade-in-up origin-bottom-right transition-all">
           
           {/* Header */}
-          <div className="bg-gradient-to-r from-luksa-card to-luksa-dark border-b border-white/10 p-4 flex justify-between items-center">
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
-              <h3 className="font-display font-bold text-white tracking-wide">LUKSA AI Bot</h3>
+          <div className="bg-gradient-to-r from-luksa-card to-black/80 border-b border-white/10 p-4 flex justify-between items-center relative overflow-hidden">
+            <div className="absolute inset-0 bg-luksa-cyan/5 animate-pulse"></div>
+            <div className="flex items-center gap-3 relative z-10">
+              <div className="relative">
+                <div className="w-2.5 h-2.5 rounded-full bg-green-400 absolute right-0 bottom-0 border border-luksa-dark shadow-[0_0_8px_#4ade80]"></div>
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-luksa-cyan to-luksa-purple p-[1px]">
+                  <div className="w-full h-full rounded-full bg-luksa-dark flex items-center justify-center">
+                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                  </div>
+                </div>
+              </div>
+              <div>
+                 <h3 className="font-display font-bold text-white tracking-wide">LUKSA AI</h3>
+                 <p className="text-[10px] text-luksa-cyan uppercase tracking-wider font-semibold">Virtualni Asistent</p>
+              </div>
             </div>
-            <button onClick={() => setIsOpen(false)} className="text-gray-400 hover:text-white">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-            </button>
+            <div className="flex gap-2 relative z-10">
+                <button onClick={() => setIsOpen(false)} className="text-gray-400 hover:text-white p-2 hover:bg-white/10 rounded-full transition-colors">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                </button>
+            </div>
           </div>
 
-          {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-luksa-purple/50 scrollbar-track-transparent">
+          {/* Messages Area */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-luksa-purple/30 scrollbar-track-transparent">
             {messages.map((msg, idx) => (
-              <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[80%] rounded-2xl p-3 text-sm leading-relaxed ${
+              <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in`}>
+                {msg.role === 'model' && (
+                   <div className="w-6 h-6 rounded-full bg-luksa-purple/20 flex-shrink-0 mr-2 mt-2 flex items-center justify-center border border-luksa-purple/30">
+                      <span className="text-[10px] text-luksa-purple font-bold">AI</span>
+                   </div>
+                )}
+                <div className={`max-w-[85%] rounded-2xl p-3.5 text-sm leading-relaxed shadow-md backdrop-blur-sm ${
                   msg.role === 'user' 
-                    ? 'bg-luksa-purple text-white rounded-br-none' 
-                    : 'bg-white/10 text-gray-200 rounded-bl-none'
+                    ? 'bg-gradient-to-br from-luksa-cyan to-blue-600 text-white font-medium rounded-br-none shadow-[0_4px_15px_rgba(0,240,255,0.2)]' 
+                    : 'bg-white/10 text-gray-100 rounded-bl-none border border-white/5'
                 }`}>
                   {msg.text}
                 </div>
               </div>
             ))}
+            
+            {/* Typing Indicator */}
             {isLoading && (
-              <div className="flex justify-start">
-                <div className="bg-white/10 rounded-2xl rounded-bl-none p-3 flex gap-1 items-center">
-                  <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce"></div>
-                  <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce delay-75"></div>
-                  <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce delay-150"></div>
+              <div className="flex justify-start animate-fade-in">
+                 <div className="w-6 h-6 mr-2"></div>
+                 <div className="bg-white/5 border border-white/5 rounded-2xl rounded-bl-none p-4 flex gap-1.5 items-center w-16">
+                  <div className="w-1.5 h-1.5 bg-luksa-cyan rounded-full animate-bounce"></div>
+                  <div className="w-1.5 h-1.5 bg-luksa-cyan rounded-full animate-bounce delay-100"></div>
+                  <div className="w-1.5 h-1.5 bg-luksa-cyan rounded-full animate-bounce delay-200"></div>
                 </div>
               </div>
             )}
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Input */}
-          <div className="p-4 border-t border-white/10 bg-luksa-card">
-            <div className="flex gap-2">
+          {/* Input Area */}
+          <div className="p-4 bg-luksa-dark border-t border-white/10">
+            <div className="relative flex items-center gap-2">
               <input 
                 type="text" 
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                placeholder="Vprašajte o naših AI storitvah..."
-                className="flex-1 bg-luksa-dark border border-white/10 rounded-full px-4 py-2 text-sm text-white focus:outline-none focus:border-luksa-cyan transition-colors placeholder-gray-500"
+                placeholder="Vpišite sporočilo..."
+                className="w-full bg-luksa-card border border-white/10 rounded-xl pl-4 pr-12 py-3.5 text-sm text-white focus:outline-none focus:border-luksa-cyan/50 focus:ring-1 focus:ring-luksa-cyan/50 transition-all placeholder-gray-500 shadow-inner"
               />
               <button 
                 onClick={handleSend}
                 disabled={isLoading || !inputValue.trim()}
-                className="bg-luksa-cyan text-luksa-dark rounded-full p-2 hover:bg-white transition-colors disabled:opacity-50"
+                className="absolute right-2 p-2 bg-gradient-to-r from-luksa-cyan to-blue-500 rounded-lg text-white hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_10px_rgba(0,240,255,0.3)]"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
+                <svg className="w-4 h-4 transform rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
               </button>
+            </div>
+            <div className="text-center mt-3">
+                <span className="text-[10px] text-gray-500 flex items-center justify-center gap-1">
+                  <span className="w-1 h-1 rounded-full bg-luksa-cyan"></span>
+                  LUKSA Neural Network
+                </span>
             </div>
           </div>
         </div>
       )}
 
-      {/* Toggle Button */}
-      <button 
-        onClick={() => setIsOpen(!isOpen)}
-        className="group relative w-14 h-14 bg-gradient-to-r from-luksa-cyan to-luksa-purple rounded-full flex items-center justify-center text-white shadow-[0_0_20px_rgba(188,19,254,0.5)] hover:scale-110 transition-transform duration-300 z-[100]"
-      >
-        <div className="absolute inset-0 rounded-full bg-white opacity-0 group-hover:opacity-20 transition-opacity"></div>
-        {isOpen ? (
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-        ) : (
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>
-        )}
-      </button>
+      {/* Floating Action Button */}
+      <div className="relative group">
+         {!isOpen && (
+            <div className="absolute -top-14 right-0 bg-white text-luksa-dark text-xs font-bold px-4 py-2 rounded-xl shadow-xl mb-2 whitespace-nowrap animate-bounce origin-bottom-right z-50">
+               <span className="relative z-10">Tukaj sem za vprašanja! 👋</span>
+               <div className="absolute bottom-[-6px] right-5 w-4 h-4 bg-white rotate-45 transform skew-x-12"></div>
+            </div>
+         )}
+        <button 
+            onClick={() => {
+                setIsOpen(!isOpen);
+                setHasInteracted(true);
+            }}
+            className={`w-14 h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center text-white shadow-[0_0_20px_rgba(0,240,255,0.5)] transition-all duration-300 z-[100] ${isOpen ? 'bg-luksa-dark border border-luksa-cyan rotate-90' : 'bg-gradient-to-br from-luksa-cyan to-luksa-purple hover:scale-110 animate-pulse-slow'}`}
+        >
+            {isOpen ? (
+            <svg className="w-6 h-6 text-luksa-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+            ) : (
+            <svg className="w-8 h-8 md:w-9 md:h-9" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>
+            )}
+        </button>
+      </div>
     </div>
   );
 };
