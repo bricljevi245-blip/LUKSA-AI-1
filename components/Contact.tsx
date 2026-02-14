@@ -1,33 +1,71 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 
 const Contact: React.FC = () => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    message: ''
+    message: '',
+    file: null as File | null,
+    fileName: ''
   });
   const [status, setStatus] = useState<'idle' | 'submitting' | 'success'>('idle');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setFormData({
+        ...formData,
+        file: file,
+        fileName: file.name
+      });
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+       const file = e.dataTransfer.files[0];
+       setFormData({
+        ...formData,
+        file: file,
+        fileName: file.name
+      });
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setStatus('submitting');
     
     try {
-      // Sending to luksaaiagencija@gmail.com via FormSubmit.co
+      // Uporaba FormData za podporo nalaganja datotek
+      const submitData = new FormData();
+      submitData.append('name', formData.name);
+      submitData.append('email', formData.email);
+      submitData.append('message', formData.message);
+      submitData.append('_subject', 'Novo sporočilo s priponko - LUKSA AI Kontakt');
+      submitData.append('_template', 'table');
+      submitData.append('_captcha', 'false');
+
+      if (formData.file) {
+        submitData.append('attachment', formData.file);
+      }
+
+      // Pošiljanje na luksaaiagencija@gmail.com preko FormSubmit.co
       const response = await fetch('https://formsubmit.co/luksaaiagencija@gmail.com', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
           'Accept': 'application/json'
+          // Content-Type se pri FormData nastavi avtomatsko, ne smemo ga ročno dodati
         },
-        body: JSON.stringify({
-          name: formData.name,
-          email: formData.email,
-          message: formData.message,
-          _subject: "Novo sporočilo - LUKSA AI Kontakt",
-          _template: "table",
-          _captcha: "false"
-        }),
+        body: submitData,
       });
 
       if (!response.ok) {
@@ -36,7 +74,7 @@ const Contact: React.FC = () => {
 
       console.log("Form Submitted Successfully");
       setStatus('success');
-      setFormData({ name: '', email: '', message: '' });
+      setFormData({ name: '', email: '', message: '', file: null, fileName: '' });
     } catch (error) {
       console.error("Error submitting form:", error);
       alert("Prišlo je do napake pri pošiljanju. Prosimo, poskusite znova.");
@@ -56,7 +94,7 @@ const Contact: React.FC = () => {
               Ste pripravljeni na digitalno <span className="text-luksa-purple">preobrazbo?</span>
             </h2>
             <p className="text-gray-400">
-              Spodaj vnesite svoje podatke. Kontaktirali vas bomo, da se pogovorimo o vaši viziji in vam zagotovili prilagojen AI koncept za vašo blagovno znamko.
+              Spodaj vnesite svoje podatke in priložite fotografijo vašega izdelka (neobvezno). Kontaktirali vas bomo s prilagojenim AI konceptom.
             </p>
           </div>
 
@@ -106,6 +144,44 @@ const Contact: React.FC = () => {
                   className="w-full bg-luksa-dark/50 border border-white/10 rounded-lg p-4 text-white placeholder-gray-600 focus:border-luksa-cyan focus:ring-1 focus:ring-luksa-cyan outline-none transition-all resize-none"
                   placeholder="Povejte nam o svojem izdelku ali viziji..."
                 ></textarea>
+              </div>
+
+              {/* File Upload Area */}
+              <div className="space-y-2">
+                 <label className="text-sm font-medium text-gray-300 ml-1">Naloži fotografijo (Opcijsko)</label>
+                 <div 
+                    className={`border-2 border-dashed rounded-xl p-6 text-center transition-all cursor-pointer group ${
+                      formData.file ? 'border-luksa-cyan bg-luksa-cyan/5' : 'border-white/20 hover:border-luksa-purple/50 hover:bg-white/5'
+                    }`}
+                    onDragOver={handleDragOver}
+                    onDrop={handleDrop}
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <input 
+                      type="file" 
+                      ref={fileInputRef} 
+                      onChange={handleFileChange} 
+                      className="hidden" 
+                      accept="image/*"
+                    />
+                    
+                    {formData.file ? (
+                      <div className="flex items-center justify-center gap-3">
+                        <div className="w-10 h-10 bg-luksa-cyan/20 text-luksa-cyan rounded-full flex items-center justify-center">
+                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                        </div>
+                        <div className="text-left">
+                            <p className="text-white font-medium text-sm">{formData.fileName}</p>
+                            <p className="text-xs text-luksa-cyan">Kliknite za zamenjavo</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center py-2">
+                        <svg className="w-8 h-8 text-gray-400 mb-2 group-hover:text-luksa-purple transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                        <p className="text-gray-400 text-sm">Kliknite za nalaganje slike ali jo povlecite sem</p>
+                      </div>
+                    )}
+                  </div>
               </div>
 
               <button 

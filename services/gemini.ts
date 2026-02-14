@@ -1,19 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
 
-// Varno pridobivanje API ključa. Če 'process' ni definiran (npr. v brskalniku brez build koraka), vrne prazen niz namesto da sesuje aplikacijo.
-const getApiKey = () => {
-  try {
-    if (typeof process !== 'undefined' && process.env) {
-      return process.env.API_KEY || '';
-    }
-  } catch (e) {
-    console.warn("Environment process variable access failed", e);
-  }
-  return '';
-};
-
-const apiKey = getApiKey();
-const ai = new GoogleGenAI({ apiKey });
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 const SYSTEM_INSTRUCTION = `
 Sistemska navodila za LUKSA AI Assistant
