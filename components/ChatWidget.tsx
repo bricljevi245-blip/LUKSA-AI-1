@@ -19,16 +19,6 @@ const ChatWidget: React.FC = () => {
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Auto-open after 4 seconds
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (!hasInteracted && !isOpen) {
-        setIsOpen(true);
-      }
-    }, 4000);
-    return () => clearTimeout(timer);
-  }, [hasInteracted, isOpen]);
-
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
