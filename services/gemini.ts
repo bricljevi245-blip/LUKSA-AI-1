@@ -1,72 +1,77 @@
 import { GoogleGenAI } from "@google/genai";
 
-// ---------------------------------------------------------------------------
-// NAVODILA ZA NAMESTITEV API KLJUČA (HOSTINGER / STATIC HOSTING):
-// Če vaše okoljske spremenljivke ne delujejo, prilepite svoj Gemini API ključ
-// neposredno spodaj med narekovaje.
+// ===========================================================================
+// 🔑 API KEY CONFIGURATION
+// Če na hostingu (Hostinger/Netlify/Vercel) okoljske spremenljivke ne delujejo,
+// prilepite svoj Gemini API ključ spodaj med narekovaje.
 // Primer: const HARDCODED_KEY = "AIzaSy...";
-// ---------------------------------------------------------------------------
+// ===========================================================================
 const HARDCODED_KEY: string = ""; 
 
-// Varno pridobivanje API ključa za različna okolja
+// Helper function to safely get the API Key from various sources
 const getApiKey = (): string | undefined => {
-  // 1. Prednost ima ročno vnesen ključ (najhitrejša rešitev za uporabnika)
+  // 1. Check hardcoded key first (User override)
   if (HARDCODED_KEY && HARDCODED_KEY.length > 10) {
     return HARDCODED_KEY;
   }
 
   try {
-    // 2. Preverjanje Vite / Modern Frontend standarda (import.meta.env)
-    // Uporabimo 'as any', da TypeScript ne javlja napak, če types niso nastavljeni
+    // 2. Check import.meta.env (Vite/Modern bundlers)
     const meta = (import.meta as any);
     if (meta && meta.env) {
       if (meta.env.VITE_API_KEY) return meta.env.VITE_API_KEY;
       if (meta.env.API_KEY) return meta.env.API_KEY;
     }
     
-    // 3. Preverjanje Node / Webpack standarda (process.env)
+    // 3. Check process.env (Node/Webpack/Create-React-App)
     if (typeof process !== 'undefined' && process.env) {
       if (process.env.API_KEY) return process.env.API_KEY;
       if (process.env.REACT_APP_API_KEY) return process.env.REACT_APP_API_KEY;
     }
   } catch (e) {
-    console.warn("Napaka pri branju okoljskih spremenljivk:", e);
+    console.warn("LUKSA AI: Could not read environment variables safely.");
   }
 
-  // Če nič od zgoraj ne deluje, vrnemo undefined
   return undefined;
 };
 
 const apiKey = getApiKey();
 const ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
 
-// Sistemska navodila za AI
+if (!apiKey) {
+  console.warn("LUKSA AI WARNING: No API Key found. Chat will not function.");
+}
+
+// Advanced Sales System Instruction
 const SYSTEM_INSTRUCTION = `
-VLOGA: Ste "LUKSA AI Asistent", napreden AI prodajni svetovalec za agencijo LUKSA AI.
-CILJ: Vaša primarna naloga je navdušiti obiskovalca in PRIDOBITI NJEGOV E-MAIL NASLOV za pošiljanje ponudbe ali primera.
+IDENTITY:
+You are "LUKSA AI", an advanced, futuristic, and helpful virtual assistant for the "LUKSA AI Agencija".
+Your creators are Luka and Sandra. You represent their vision of combining technology and human creativity.
 
-TON KOMUNIKACIJE:
-- Futurističen, a prijazen.
-- Kratek, jedrnat in usmerjen v akcijo.
-- Uporabljajte emojije zmerno (🚀, ✨, 🤖).
+GOAL:
+Your primary goal is to ENGAGE visitors and COLLECT THEIR EMAIL ADDRESSES so Luka and Sandra can send them a personalized AI concept or offer.
 
-PRAVILA:
-1. Ne omenjajte tehničnih imen modelov (Gemini, GPT, itd.). Recite "naši nevro-algoritmi".
-2. ČE UPORABNIK VPIŠE EMAIL: Se toplo zahvalite in potrdite, da je shranjen.
-3. ČE UPORABNIK VPRAŠA ZA CENO: Povejte okvirno ("do 80% ceneje od studia"), a poudarite, da za točen izračun potrebujete opis projekta in kontakt.
-4. "CTA TIME": Ko sistem javi, da je čas za CTA, recite nekaj takega: "Da vam lahko pošljem ta koncept, mi prosim zaupajte vaš e-naslov."
+TONE:
+- Professional yet warm and enthusiastic.
+- Futuristic, using terms like "neural networks", "hyper-realism", "digital transformation".
+- Concise. Do not write long paragraphs.
 
-STORITVE:
-- AI Produktna fotografija (brez pošiljanja izdelkov).
-- AI Influencerji (konsistentni liki).
-- Spletne strani prihodnosti.
+KNOWLEDGE BASE:
+- Services: AI Product Photography (cheaper/faster than studios), AI Influencers (consistent characters), Web Development.
+- Benefits: 80% cost reduction, 24-48h delivery, no logistics needed.
+
+PROTOCOL FOR EMAIL COLLECTION:
+1. If the user provides an email address, acknowledge it immediately with gratitude (e.g., "Hvala! Vaš email je varno shranjen. Kmalu prejmete koncept.").
+2. If the user asks about pricing, give a range but say you need their email to send a specific quote.
+3. When you receive the [CTA_TRIGGER] instruction, you MUST politely ask for their email to proceed (e.g., "Da vam lahko pošljem primer, mi prosim zaupajte vaš e-naslov.").
+
+LANGUAGE:
+Communicate in Slovenian (Slovenščina) by default, unless the user speaks English.
 `;
 
 export const sendMessageToGemini = async (message: string, history: { role: string; parts: { text: string }[] }[], isCtaTurn: boolean = false) => {
-  // Preverjanje inicializacije
   if (!ai) {
-    console.error("Gemini API Key missing.");
-    return "Oprostite, povezava z AI jedrom ni vzpostavljena. (Manjka API Ključ - preverite services/gemini.ts)";
+    return "Oprostite, trenutno ne morem vzpostaviti povezave z nevronskim omrežjem (Manjka API Ključ). Prosim, pišite na luksaaiagencija@gmail.com.";
   }
 
   try {
@@ -81,16 +86,16 @@ export const sendMessageToGemini = async (message: string, history: { role: stri
       }))
     });
 
-    // Dodajanje skritega navodila za CTA, če je pravi čas
+    // Invisible instruction to trigger sales behavior
     let finalPrompt = message;
     if (isCtaTurn) {
-      finalPrompt += "\n\n[SYSTEM INSTRUCTION: Now is the perfect moment to ask for the user's email address naturally. Do it.]";
+      finalPrompt += "\n\n[SYSTEM INSTRUCTION: This is a [CTA_TRIGGER]. The user is engaged. Politely asking for their email address is now high priority. Do it naturally.]";
     }
 
     const result = await chat.sendMessage({ message: finalPrompt });
     return result.text;
   } catch (error) {
     console.error("Gemini API Error:", error);
-    return "Zaznal sem motnjo v komunikaciji. Prosim, poskusite ponovno.";
+    return "Zaznal sem motnjo v komunikaciji. Prosim, poskusite ponovno ali uporabite kontaktni obrazec.";
   }
 };

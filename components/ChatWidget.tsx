@@ -10,35 +10,34 @@ const ChatWidget: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [hasInteracted, setHasInteracted] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
-    { role: 'model', text: "Pozdravljeni! 👋 Sem LUKSA AI. Kako lahko danes pospešim vaš posel z umetno inteligenco?" }
+    { role: 'model', text: "Pozdravljeni! 👋 Sem LUKSA AI. Želite videti, kako lahko vaš izdelek postavim na luno ali v pariški atelje? Vprašajte me karkoli." }
   ]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [emailCaptured, setEmailCaptured] = useState(false);
+  const [showEmailSuccess, setShowEmailSuccess] = useState(false);
+  
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Samodejno odpiranje po 5 sekundah
+  // Auto-open after 4 seconds
   useEffect(() => {
     const timer = setTimeout(() => {
       if (!hasInteracted && !isOpen) {
         setIsOpen(true);
       }
-    }, 5000);
+    }, 4000);
     return () => clearTimeout(timer);
   }, [hasInteracted, isOpen]);
 
-  // Avtomatsko pomikanje na dno
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   useEffect(() => {
-    if (isOpen) {
-      scrollToBottom();
-    }
+    if (isOpen) scrollToBottom();
   }, [messages, isOpen, isLoading]);
 
-  // Preverjanje, če sporočilo vsebuje email
+  // Regex for basic email validation
   const containsEmail = (text: string) => {
     return /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/.test(text);
   };
@@ -50,27 +49,26 @@ const ChatWidget: React.FC = () => {
     setInputValue('');
     setHasInteracted(true);
     
-    // Dodaj uporabnikovo sporočilo
+    // Optimistic UI update
     const newMessages = [...messages, { role: 'user', text: userMsg } as Message];
     setMessages(newMessages);
     setIsLoading(true);
 
-    // Preveri, če je uporabnik vpisal email
+    // Email Capture Logic
     if (containsEmail(userMsg) && !emailCaptured) {
       setEmailCaptured(true);
-      // Tukaj bi lahko poslali email na backend/servis
-      setTimeout(() => {
-         // Simulacija shranjevanja
-         console.log("Email captured:", userMsg);
-      }, 500);
+      setShowEmailSuccess(true);
+      // In a real app, you would send this to your backend here
+      console.log("🎯 LEAD CAPTURED:", userMsg);
+      setTimeout(() => setShowEmailSuccess(false), 3000);
     }
 
     try {
-      // Logika za CTA (vsako 3. sporočilo, če še nimamo emaila)
+      // CTA Logic: Trigger every 3rd message if we don't have an email yet
       const userMsgCount = newMessages.filter(m => m.role === 'user').length;
-      const isCtaTurn = !emailCaptured && (userMsgCount % 3 === 0);
+      const isCtaTurn = !emailCaptured && (userMsgCount > 0) && (userMsgCount % 3 === 0);
 
-      // Priprava zgodovine za API (brez zadnjega sporočila, ki ga pošiljamo ločeno)
+      // Prepare history (excluding the message we are about to send via the turn)
       const history = messages.map(m => ({
         role: m.role,
         parts: [{ text: m.text }]
@@ -89,6 +87,15 @@ const ChatWidget: React.FC = () => {
 
   return (
     <div className="fixed bottom-4 right-4 z-[100] flex flex-col items-end font-sans print:hidden">
+      
+      {/* Email Success Notification */}
+      {showEmailSuccess && (
+        <div className="mb-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg flex items-center gap-2 animate-fade-in-up">
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+          <span className="text-sm font-bold">Email uspešno shranjen!</span>
+        </div>
+      )}
+
       {/* Chat Window */}
       {isOpen && (
         <div className="mb-4 w-[90vw] md:w-[380px] h-[500px] md:h-[600px] bg-luksa-dark/95 backdrop-blur-xl border border-luksa-cyan/30 rounded-2xl shadow-[0_0_50px_rgba(0,0,0,0.6)] flex flex-col overflow-hidden animate-fade-in-up origin-bottom-right transition-all">
@@ -110,11 +117,9 @@ const ChatWidget: React.FC = () => {
                  <p className="text-[10px] text-luksa-cyan uppercase tracking-wider font-semibold">Virtualni Asistent</p>
               </div>
             </div>
-            <div className="flex gap-2 relative z-10">
-                <button onClick={() => setIsOpen(false)} className="text-gray-400 hover:text-white p-2 hover:bg-white/10 rounded-full transition-colors">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-                </button>
-            </div>
+            <button onClick={() => setIsOpen(false)} className="text-gray-400 hover:text-white p-2 hover:bg-white/10 rounded-full transition-colors z-10">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+            </button>
           </div>
 
           {/* Messages Area */}
@@ -158,7 +163,7 @@ const ChatWidget: React.FC = () => {
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                placeholder="Vpišite sporočilo..."
+                placeholder={emailCaptured ? "Vpišite sporočilo..." : "Vpišite sporočilo (ali vaš email)..."}
                 className="w-full bg-luksa-card border border-white/10 rounded-xl pl-4 pr-12 py-3.5 text-sm text-white focus:outline-none focus:border-luksa-cyan/50 focus:ring-1 focus:ring-luksa-cyan/50 transition-all placeholder-gray-500 shadow-inner"
               />
               <button 
@@ -171,7 +176,7 @@ const ChatWidget: React.FC = () => {
             </div>
             <div className="text-center mt-3">
                 <span className="text-[10px] text-gray-500 flex items-center justify-center gap-1">
-                  <span className="w-1 h-1 rounded-full bg-luksa-cyan"></span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-luksa-cyan animate-pulse"></span>
                   LUKSA Neural Network
                 </span>
             </div>
