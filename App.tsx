@@ -1,4 +1,4 @@
-import React, { useState, Suspense, lazy, type ReactNode } from 'react';
+import React, { useState, Suspense, lazy, Component, type ReactNode, type ErrorInfo } from 'react';
 import Header from './components/Header';
 import Hero from './components/Hero';
 
@@ -27,18 +27,18 @@ interface SafeComponentState {
 }
 
 // Error Boundary Component za izolacijo napak
-class SafeComponent extends React.Component<SafeComponentProps, SafeComponentState> {
+class SafeComponent extends Component<SafeComponentProps, SafeComponentState> {
   constructor(props: SafeComponentProps) {
     super(props);
     this.state = { hasError: false };
   }
 
-  static getDerivedStateFromError(error: any) {
+  static getDerivedStateFromError(error: Error): SafeComponentState {
     return { hasError: true };
   }
 
-  componentDidCatch(error: any, errorInfo: any) {
-    console.error("Component failed to load:", error);
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error("Component failed to load:", error, errorInfo);
   }
 
   render() {

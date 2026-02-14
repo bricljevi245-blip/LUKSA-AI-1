@@ -1,6 +1,22 @@
 import { GoogleGenAI } from "@google/genai";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Varno pridobivanje API ključa za brskalnike
+const getApiKey = () => {
+  try {
+    // Preverimo, če process obstaja (za build okolja)
+    if (typeof process !== 'undefined' && process.env) {
+      return process.env.API_KEY;
+    }
+  } catch (e) {
+    // Ignoriramo napako v okoljih brez process spremenljivke
+  }
+  return undefined;
+};
+
+const apiKey = getApiKey();
+
+// Inicializiramo AI samo, če imamo ključ. Če ne, bo sendMessageToGemini vrnil napako.
+const ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
 
 const SYSTEM_INSTRUCTION = `
 Sistemska navodila za LUKSA AI Assistant
@@ -30,6 +46,11 @@ Ne bodite vsiljivi. Poziva k dejanju (kot je povabilo k oddaji e-pošte ali brez
 `;
 
 export const sendMessageToGemini = async (message: string, history: { role: string; parts: { text: string }[] }[]) => {
+  if (!ai) {
+    console.warn("API Key is missing or invalid.");
+    return "Povezava z nevronsko mrežo trenutno ni na voljo. Prosimo, uporabite kontaktni obrazec.";
+  }
+
   try {
     const chat = ai.chats.create({
       model: 'gemini-3-flash-preview',

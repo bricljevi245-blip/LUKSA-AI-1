@@ -31,20 +31,25 @@ const ChatWidget: React.FC = () => {
     setMessages(prev => [...prev, { role: 'user', text: userMsg }]);
     setIsLoading(true);
 
-    // Prepare history for API
-    const history = messages.map(m => ({
-      role: m.role,
-      parts: [{ text: m.text }]
-    }));
+    try {
+      // Prepare history for API
+      const history = messages.map(m => ({
+        role: m.role,
+        parts: [{ text: m.text }]
+      }));
 
-    const responseText = await sendMessageToGemini(userMsg, history);
-    
-    setMessages(prev => [...prev, { role: 'model', text: responseText || "Prišlo je do napake." }]);
-    setIsLoading(false);
+      const responseText = await sendMessageToGemini(userMsg, history);
+      
+      setMessages(prev => [...prev, { role: 'model', text: responseText || "Prišlo je do napake pri komunikaciji." }]);
+    } catch (e) {
+      setMessages(prev => [...prev, { role: 'model', text: "Oprostite, trenutno ne morem vzpostaviti povezave." }]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
+    <div className="fixed bottom-6 right-6 z-[100] flex flex-col items-end print:hidden">
       {/* Chat Window */}
       {isOpen && (
         <div className="mb-4 w-[90vw] md:w-[350px] h-[500px] bg-luksa-dark/95 backdrop-blur-xl border border-luksa-cyan/30 rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-fade-in-up origin-bottom-right transition-all">
@@ -94,7 +99,7 @@ const ChatWidget: React.FC = () => {
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSend()}
                 placeholder="Vprašajte o naših AI storitvah..."
-                className="flex-1 bg-luksa-dark border border-white/10 rounded-full px-4 py-2 text-sm text-white focus:outline-none focus:border-luksa-cyan transition-colors"
+                className="flex-1 bg-luksa-dark border border-white/10 rounded-full px-4 py-2 text-sm text-white focus:outline-none focus:border-luksa-cyan transition-colors placeholder-gray-500"
               />
               <button 
                 onClick={handleSend}
@@ -111,7 +116,7 @@ const ChatWidget: React.FC = () => {
       {/* Toggle Button */}
       <button 
         onClick={() => setIsOpen(!isOpen)}
-        className="group relative w-14 h-14 bg-gradient-to-r from-luksa-cyan to-luksa-purple rounded-full flex items-center justify-center text-white shadow-[0_0_20px_rgba(188,19,254,0.5)] hover:scale-110 transition-transform duration-300"
+        className="group relative w-14 h-14 bg-gradient-to-r from-luksa-cyan to-luksa-purple rounded-full flex items-center justify-center text-white shadow-[0_0_20px_rgba(188,19,254,0.5)] hover:scale-110 transition-transform duration-300 z-[100]"
       >
         <div className="absolute inset-0 rounded-full bg-white opacity-0 group-hover:opacity-20 transition-opacity"></div>
         {isOpen ? (
