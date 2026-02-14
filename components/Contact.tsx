@@ -14,6 +14,13 @@ const Contact: React.FC = () => {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
+      
+      // Validacija velikosti (Max 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        alert("Datoteka je prevelika. Največja dovoljena velikost je 10MB.");
+        return;
+      }
+
       setFormData({
         ...formData,
         file: file,
@@ -32,6 +39,12 @@ const Contact: React.FC = () => {
     e.stopPropagation();
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
        const file = e.dataTransfer.files[0];
+       
+       if (file.size > 10 * 1024 * 1024) {
+        alert("Datoteka je prevelika. Največja dovoljena velikost je 10MB.");
+        return;
+       }
+
        setFormData({
         ...formData,
         file: file,
@@ -45,26 +58,25 @@ const Contact: React.FC = () => {
     setStatus('submitting');
     
     try {
-      // Uporaba FormData za podporo nalaganja datotek
       const submitData = new FormData();
-      submitData.append('name', formData.name);
+      submitData.append('ime', formData.name);
       submitData.append('email', formData.email);
-      submitData.append('message', formData.message);
+      submitData.append('sporocilo', formData.message);
       submitData.append('_subject', 'Novo sporočilo s priponko - LUKSA AI Kontakt');
       submitData.append('_template', 'table');
       submitData.append('_captcha', 'false');
+      // Onemogočimo avtomatski odgovor FormSubmit-a, ker imamo svojo UI potrditev
+      submitData.append('_next', 'false');
 
       if (formData.file) {
-        submitData.append('attachment', formData.file);
+        // Ime polja 'priponka' zagotovi, da FormSubmit to obravnava kot datoteko
+        submitData.append('priponka', formData.file);
       }
 
-      // Pošiljanje na luksaaiagencija@gmail.com preko FormSubmit.co
+      // KLJUČNO: Ne nastavljamo 'headers' ročno. 
+      // Brskalnik bo samodejno nastavil pravilen multipart/form-data boundary.
       const response = await fetch('https://formsubmit.co/luksaaiagencija@gmail.com', {
         method: 'POST',
-        headers: {
-          'Accept': 'application/json'
-          // Content-Type se pri FormData nastavi avtomatsko, ne smemo ga ročno dodati
-        },
         body: submitData,
       });
 
@@ -77,7 +89,7 @@ const Contact: React.FC = () => {
       setFormData({ name: '', email: '', message: '', file: null, fileName: '' });
     } catch (error) {
       console.error("Error submitting form:", error);
-      alert("Prišlo je do napake pri pošiljanju. Prosimo, poskusite znova.");
+      alert("Prišlo je do napake pri pošiljanju. Prosimo, preverite internetno povezavo in poskusite znova.");
       setStatus('idle');
     }
   };
@@ -148,7 +160,7 @@ const Contact: React.FC = () => {
 
               {/* File Upload Area */}
               <div className="space-y-2">
-                 <label className="text-sm font-medium text-gray-300 ml-1">Naloži fotografijo (Opcijsko)</label>
+                 <label className="text-sm font-medium text-gray-300 ml-1">Naloži fotografijo (Opcijsko, max 10MB)</label>
                  <div 
                     className={`border-2 border-dashed rounded-xl p-6 text-center transition-all cursor-pointer group ${
                       formData.file ? 'border-luksa-cyan bg-luksa-cyan/5' : 'border-white/20 hover:border-luksa-purple/50 hover:bg-white/5'

@@ -23,7 +23,13 @@ const FreePreviewPage: React.FC<FreePreviewPageProps> = ({ onBack }) => {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      // Basic validation for size (e.g., 5MB limit check could be added here)
+      
+      // Validation: Max 10MB
+      if (file.size > 10 * 1024 * 1024) {
+        alert("Datoteka je prevelika. Največja dovoljena velikost je 10MB.");
+        return;
+      }
+
       setFormData({
         ...formData,
         file: file,
@@ -42,6 +48,12 @@ const FreePreviewPage: React.FC<FreePreviewPageProps> = ({ onBack }) => {
     e.stopPropagation();
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
        const file = e.dataTransfer.files[0];
+       
+       if (file.size > 10 * 1024 * 1024) {
+        alert("Datoteka je prevelika. Največja dovoljena velikost je 10MB.");
+        return;
+       }
+
        setFormData({
         ...formData,
         file: file,
@@ -57,24 +69,24 @@ const FreePreviewPage: React.FC<FreePreviewPageProps> = ({ onBack }) => {
     try {
       // Using FormData to handle file uploads natively via email
       const submitData = new FormData();
-      submitData.append('name', formData.name);
+      submitData.append('ime', formData.name);
       submitData.append('email', formData.email);
-      submitData.append('description', formData.description);
+      submitData.append('opis_ideje', formData.description);
       submitData.append('_subject', 'Nova zahteva za Brezplačen AI Predogled - LUKSA AI');
       submitData.append('_template', 'table');
       submitData.append('_captcha', 'false');
+      submitData.append('_next', 'false'); // Prevent redirection
 
       if (formData.file) {
-        submitData.append('attachment', formData.file);
+        // Appending as 'slika_izdelka' helps FormSubmit identify it as a file field
+        submitData.append('slika_izdelka', formData.file);
       }
 
       // Sending to luksaaiagencija@gmail.com via FormSubmit.co
+      // REMOVED headers to let browser handle multipart/form-data boundary automatically
       const response = await fetch('https://formsubmit.co/luksaaiagencija@gmail.com', {
         method: 'POST',
-        headers: {
-            'Accept': 'application/json'
-        },
-        body: submitData, // Browser automatically sets Content-Type: multipart/form-data
+        body: submitData, 
       });
 
       if (!response.ok) {
@@ -85,7 +97,7 @@ const FreePreviewPage: React.FC<FreePreviewPageProps> = ({ onBack }) => {
       setFormData({ name: '', email: '', description: '', file: null, fileName: '' });
     } catch (error) {
       console.error("Error submitting form:", error);
-      alert("Prišlo je do napake pri pošiljanju. Preverite velikost slike ali poskusite kasneje.");
+      alert("Prišlo je do napake pri pošiljanju. Preverite velikost slike (max 10MB) ali poskusite kasneje.");
       setStatus('idle');
     }
   };
@@ -170,7 +182,7 @@ const FreePreviewPage: React.FC<FreePreviewPageProps> = ({ onBack }) => {
                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                         </div>
                         <p className="text-gray-300 font-medium mb-1">Kliknite za nalaganje ali povlecite sliko sem</p>
-                        <p className="text-xs text-gray-500">Podprti formati: JPG, PNG (max 5MB)</p>
+                        <p className="text-xs text-gray-500">Podprti formati: JPG, PNG (max 10MB)</p>
                       </div>
                     )}
                   </div>
