@@ -1,18 +1,20 @@
 import { GoogleGenAI } from "@google/genai";
 
-// Pridobivanje API ključa na način, ki je prijazen do bundlerjev (Vite/Webpack/CRA).
-// Bundlerji običajno zamenjajo 'process.env.API_KEY' z dejanskim nizom med gradnjo.
-// Uporaba try-catch prepreči zrušitev, če spremenljivka ni definirana.
+// Varno pridobivanje API ključa.
+// Ta funkcija prepreči zrušitev (crash) v brskalniku, če 'process' ni definiran.
 const getApiKey = () => {
   try {
+    // V nekaterih okoljih (kot Hostinger ali statični HTML) process ni definiran.
+    // Dostop do process.env povzroči napako, zato uporabimo try-catch.
     return process.env.API_KEY;
   } catch (e) {
-    console.warn("Napaka pri branju API ključa:", e);
+    console.warn("API ključ ni bil najden ali process ni definiran.");
     return undefined;
   }
 };
 
 const apiKey = getApiKey();
+// Inicializiramo AI samo če imamo ključ.
 const ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
 
 const SYSTEM_INSTRUCTION = `
@@ -47,7 +49,8 @@ Baza znanja:
 export const sendMessageToGemini = async (message: string, history: { role: string; parts: { text: string }[] }[], isCtaTurn: boolean = false) => {
   if (!ai) {
     console.error("Gemini API not initialized. Missing API Key.");
-    return "Oprostite, trenutno sem v fazi nadgradnje sistema. Prosimo, pišite nam na luksaaiagencija@gmail.com ali uporabite kontaktni obrazec spodaj.";
+    // Vrnemo prijazno sporočilo namesto tišine ali napake
+    return "Moj sistem trenutno deluje v načinu brez povezave. Za povpraševanje prosim uporabite kontaktni obrazec ali nam pišite na luksaaiagencija@gmail.com.";
   }
 
   try {
@@ -72,6 +75,6 @@ export const sendMessageToGemini = async (message: string, history: { role: stri
     return result.text;
   } catch (error) {
     console.error("Gemini API Error:", error);
-    return "Prišlo je do manjše motnje v nevronski povezavi. Lahko ponovite vprašanje?";
+    return "Zaznal sem motnjo v komunikacijskem kanalu. Prosim, poskusite ponovno ali uporabite kontaktni obrazec.";
   }
 };
