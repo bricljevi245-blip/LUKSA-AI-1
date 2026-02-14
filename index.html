@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="sl" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LUKSA AI | Povzdignite svojo znamko</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            display: ['Orbitron', 'sans-serif'],
+          },
+          colors: {
+            luksa: {
+              cyan: '#00f0ff',
+              purple: '#bc13fe',
+              dark: '#050510',
+              card: '#0a0a1f',
+            }
+          },
+          animation: {
+            'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background-color: #050510;
+      color: #e2e8f0;
+    }
+    .neon-text {
+      text-shadow: 0 0 10px rgba(0, 240, 255, 0.5), 0 0 20px rgba(188, 19, 254, 0.3);
+    }
+    .neon-border {
+      box-shadow: 0 0 10px rgba(0, 240, 255, 0.2), inset 0 0 10px rgba(188, 19, 254, 0.1);
+    }
+  </style>
+<script type="importmap">
+{
+  "imports": {
+    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
+    "react/": "https://esm.sh/react@^19.2.4/",
+    "react": "https://esm.sh/react@^19.2.4",
+    "@google/genai": "https://esm.sh/@google/genai@^1.41.0"
+  }
+}
+</script>
+</head>
+<body>
+  <div id="root"></div>
+</body>
+</html>
