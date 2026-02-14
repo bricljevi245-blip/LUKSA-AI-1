@@ -27,10 +27,11 @@ interface SafeComponentState {
 }
 
 // Error Boundary Component za izolacijo napak
-class SafeComponent extends Component<SafeComponentProps, SafeComponentState> {
+class SafeComponent extends React.Component<SafeComponentProps, SafeComponentState> {
+  state: SafeComponentState = { hasError: false };
+
   constructor(props: SafeComponentProps) {
     super(props);
-    this.state = { hasError: false };
   }
 
   static getDerivedStateFromError(error: Error): SafeComponentState {

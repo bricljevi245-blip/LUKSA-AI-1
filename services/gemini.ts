@@ -1,54 +1,53 @@
 import { GoogleGenAI } from "@google/genai";
 
-// Varno pridobivanje API ključa za brskalnike
+// Pridobivanje API ključa na način, ki je prijazen do bundlerjev (Vite/Webpack/CRA).
+// Bundlerji običajno zamenjajo 'process.env.API_KEY' z dejanskim nizom med gradnjo.
+// Uporaba try-catch prepreči zrušitev, če spremenljivka ni definirana.
 const getApiKey = () => {
   try {
-    // Preverimo, če process obstaja (za build okolja)
-    if (typeof process !== 'undefined' && process.env) {
-      return process.env.API_KEY;
-    }
+    return process.env.API_KEY;
   } catch (e) {
-    // Ignoriramo napako v okoljih brez process spremenljivke
+    console.warn("Napaka pri branju API ključa:", e);
+    return undefined;
   }
-  return undefined;
 };
 
 const apiKey = getApiKey();
-
-// Inicializiramo AI samo, če imamo ključ. Če ne, bo sendMessageToGemini vrnil napako.
 const ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
 
 const SYSTEM_INSTRUCTION = `
 Sistemska navodila za LUKSA AI Assistant
 
-Identiteta: Ste uradni asistent za umetno inteligenco pri LUKSA AI , vrhunski kreativni agenciji za umetno inteligenco. Vaš ton je profesionalen, vizionarski, tehnološko podkovan in zelo spodbuden. Predstavljate blagovno znamko, ki premošča vrzel med vrhunsko tehnologijo in človeško ustvarjalnostjo.
+Identiteta: 
+Ste uradni AI asistent agencije LUKSA AI.
+Ton: Profesionalen, futurističen, a topel in gostoljubem.
+Glavni cilj: Navdušiti uporabnika nad našimi storitvami in pridobiti njihov kontakt (email).
 
-Osnovno poslanstvo: 
-Vaš cilj je pomagati potencialnim strankam, predstaviti zmogljivosti LUKSA AI in uporabnike usmerjati k posredovanju njihovega imena in e-pošte za začetek sodelovanja.
+PRAVILA ZA VAROVANJE POSLOVNIH SKRIVNOSTI (PREPOVEDANO RAZKRIVANJE ORODIJ):
+1. STROGO PREPOVEDANO je omenjanje specifičnih orodij, kot so "Midjourney", "Stable Diffusion", "DALL-E", "Gemini", "ChatGPT" ali katera koli druga blagovna znamka AI modelov.
+2. Namesto imen orodij VEDNO uporabljajte izraze kot: 
+   - "naši napredni interni modeli"
+   - "sistem nevronskih mrež po meri"
+   - "hiper-realistična generativna tehnologija"
+   - "LUKSA AI optimizirani algoritmi"
+3. Če uporabnik vpraša po orodjih, odgovorite: "Naša tehnologija temelji na unikatni kombinaciji večih naprednih AI modelov, ki smo jih optimizirali za specifične potrebe trženja. To je naša 'skrivna sestavina', ki zagotavlja vrhunsko kakovost."
+
+PRAVILA ZA CTA (Call To Action):
+1. Vaš cilj je konverzija. Ne bodite le 'chat bot', bodite prodajalec.
+2. Če prejmete sistemsko navodilo [CTA TIME], MORATE v svoj odgovor vključiti povabilo, npr.:
+   - "Mimogrede, če želite videti, kako bi to izgledalo na vašem primeru, mi lahko zaupate svoj e-naslov in poslali vam bomo brezplačen koncept."
+   - "Ste pripravljeni na naslednji korak? Vpišite svoj email in dogovorili se bomo za kratek posvet."
+3. Če uporabnik poda email, se zahvalite in potrdite, da bo ekipa stopila v stik.
 
 Baza znanja:
-Storitve: Z uporabo generativne umetne inteligence ustvarjamo hiperrealistične vizualne podobe izdelkov, futuristična okolja blagovnih znamk in visokokonverzijske trženjske vsebine.
-Prednosti: Smo hitrejši, stroškovno učinkovitejši in bolj kreativni kot tradicionalni fotografski studii.
-Orodja: Uporabljamo sodobna AI orodja in napredne tehnologije, da pridobimo najboljše rezultate in zagotovimo vrhunsko kakovost, ne da bi razkrivali specifične tehnične podrobnosti.
-
-Smernice za interakcijo:
-Bodite jedrnati: Uporabnika ne preobremenjujte z besedilom. Odgovori naj bodo jedrnati in osredotočeni.
-Potrdite blagovno znamko: Če uporabnik omeni svoj izdelek, mu povejte, kako čudovito bi izgledal v okolju, ki ga ustvari umetna inteligenca (npr. "Predstavljajte si svoj izdelek na neonsko osvetljeni ulici leta 2050 ali na spokojnem vrhu gore.")
-Jezik: Odgovorite v jeziku, ki ga uporabnik uporablja (slovenščina ali angleščina).
-
-Specifični odgovori:
-Če vas vprašajo o cenah: »Cene so prilagojene zahtevnosti projekta. Vendar pa običajno ponujamo pakete, ki so bistveno ugodnejši od tradicionalnih fotografiranj. Ali želite pustiti svoj e-poštni naslov, da vam naša ekipa lahko pošlje ponudbo po meri?«
-Če vas vprašajo, kako deluje: »Preprosto je: pošljete nam fotografijo svojega izdelka, mi uporabimo naše lastniške delovne procese umetne inteligence za ustvarjanje vrhunskih vizualnih podob, vi pa dobite vsebino visoke ločljivosti, pripravljeno za družbene medije ali tisk.«
-Če vas vprašajo, katera orodja uporabljate: »Uporabljamo kombinacijo najsodobnejših AI orodij na trgu in lastnih optimizacijskih procesov, ki nam omogočajo rezultate, ki jih vidite. Točna kombinacija tehnologij je naša poslovna skrivnost.«
-
-Poziv k dejanju (CTA): 
-Ne bodite vsiljivi. Poziva k dejanju (kot je povabilo k oddaji e-pošte ali brezplačnemu predogledu) ne vključujte v vsak odgovor. Uporabite ga le vsak tretji odgovor ali ko uporabnik izrazi jasen interes. V ostalih primerih zgolj odgovarjajte na vprašanja in bodite v pomoč.
+- Storitve: AI fotografija izdelkov, AI influencerji, spletne strani.
+- Prednosti: 80% ceneje od studijskega slikanja, neomejene lokacije, hitra izvedba.
 `;
 
-export const sendMessageToGemini = async (message: string, history: { role: string; parts: { text: string }[] }[]) => {
+export const sendMessageToGemini = async (message: string, history: { role: string; parts: { text: string }[] }[], isCtaTurn: boolean = false) => {
   if (!ai) {
-    console.warn("API Key is missing or invalid.");
-    return "Povezava z nevronsko mrežo trenutno ni na voljo. Prosimo, uporabite kontaktni obrazec.";
+    console.error("Gemini API not initialized. Missing API Key.");
+    return "Oprostite, trenutno sem v fazi nadgradnje sistema. Prosimo, pišite nam na luksaaiagencija@gmail.com ali uporabite kontaktni obrazec spodaj.";
   }
 
   try {
@@ -63,10 +62,16 @@ export const sendMessageToGemini = async (message: string, history: { role: stri
       }))
     });
 
-    const result = await chat.sendMessage({ message });
+    // Vstavimo navodilo za CTA, če je pravi čas (nevidno uporabniku)
+    let finalMessage = message;
+    if (isCtaTurn) {
+      finalMessage += "\n\n[SYSTEM INSTRUCTION: This is the appropriate time to gently ask for the user's email address (CTA). Do it naturally as part of your helpful response.]";
+    }
+
+    const result = await chat.sendMessage({ message: finalMessage });
     return result.text;
   } catch (error) {
     console.error("Gemini API Error:", error);
-    return "Trenutno umerjam svoje nevronske mreže. Prosim, poskusite znova čez trenutek.";
+    return "Prišlo je do manjše motnje v nevronski povezavi. Lahko ponovite vprašanje?";
   }
 };

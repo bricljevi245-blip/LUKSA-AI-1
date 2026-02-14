@@ -32,13 +32,17 @@ const ChatWidget: React.FC = () => {
     setIsLoading(true);
 
     try {
+      // Calculate turn count to trigger CTA every 3rd message
+      const userMessageCount = messages.filter(m => m.role === 'user').length + 1;
+      const isCtaTurn = userMessageCount > 0 && userMessageCount % 3 === 0;
+
       // Prepare history for API
       const history = messages.map(m => ({
         role: m.role,
         parts: [{ text: m.text }]
       }));
 
-      const responseText = await sendMessageToGemini(userMsg, history);
+      const responseText = await sendMessageToGemini(userMsg, history, isCtaTurn);
       
       setMessages(prev => [...prev, { role: 'model', text: responseText || "Prišlo je do napake pri komunikaciji." }]);
     } catch (e) {
