@@ -1,14 +1,17 @@
 import { GoogleGenAI } from "@google/genai";
 
-// Varno pridobivanje API ključa.
-// Ta funkcija prepreči zrušitev (crash) v brskalniku, če 'process' ni definiran.
+// Varno pridobivanje API ključa za okolja, kot je Hostinger.
+// V brskalniku 'process' običajno ne obstaja, kar povzroči napako.
 const getApiKey = () => {
   try {
-    // V nekaterih okoljih (kot Hostinger ali statični HTML) process ni definiran.
-    // Dostop do process.env povzroči napako, zato uporabimo try-catch.
-    return process.env.API_KEY;
+    // Poskusimo dostopati do process.env, če obstaja (npr. med buildom)
+    // Če process ni definiran, bo vrglo napako, ki jo ujamemo.
+    if (typeof process !== 'undefined' && process.env && process.env.API_KEY) {
+      return process.env.API_KEY;
+    }
+    return undefined;
   } catch (e) {
-    console.warn("API ključ ni bil najden ali process ni definiran.");
+    // Ignoriramo napako, če process ni definiran
     return undefined;
   }
 };
@@ -48,9 +51,9 @@ Baza znanja:
 
 export const sendMessageToGemini = async (message: string, history: { role: string; parts: { text: string }[] }[], isCtaTurn: boolean = false) => {
   if (!ai) {
-    console.error("Gemini API not initialized. Missing API Key.");
-    // Vrnemo prijazno sporočilo namesto tišine ali napake
-    return "Moj sistem trenutno deluje v načinu brez povezave. Za povpraševanje prosim uporabite kontaktni obrazec ali nam pišite na luksaaiagencija@gmail.com.";
+    console.warn("Gemini API not initialized. Missing API Key.");
+    // Vrnemo generičen odgovor, da aplikacija ne zmrzne
+    return "Pozdravljeni! Trenutno posodabljamo naše nevronske povezave. Prosimo, pišite nam neposredno na luksaaiagencija@gmail.com ali izpolnite kontaktni obrazec spodaj za takojšnjo pomoč.";
   }
 
   try {

@@ -32,11 +32,11 @@ const ChatWidget: React.FC = () => {
     setIsLoading(true);
 
     try {
-      // Calculate turn count to trigger CTA every 3rd message
+      // Izračunaj število sporočil za sprožitev CTA vsako 3. sporočilo
       const userMessageCount = messages.filter(m => m.role === 'user').length + 1;
       const isCtaTurn = userMessageCount > 0 && userMessageCount % 3 === 0;
 
-      // Prepare history for API
+      // Pripravi zgodovino za API
       const history = messages.map(m => ({
         role: m.role,
         parts: [{ text: m.text }]
@@ -46,6 +46,7 @@ const ChatWidget: React.FC = () => {
       
       setMessages(prev => [...prev, { role: 'model', text: responseText || "Prišlo je do napake pri komunikaciji." }]);
     } catch (e) {
+      console.error("Chat Error:", e);
       setMessages(prev => [...prev, { role: 'model', text: "Oprostite, trenutno ne morem vzpostaviti povezave." }]);
     } finally {
       setIsLoading(false);
