@@ -6,7 +6,7 @@ import { GoogleGenAI } from "@google/genai";
 // prilepite svoj Gemini API ključ spodaj med narekovaje.
 // Primer: const HARDCODED_KEY = "AIzaSy...";
 // ===========================================================================
-const HARDCODED_KEY: string = ""; 
+const HARDCODED_KEY: string = "AIzaSyALFyHnmaIFwqPFKt2sTViLofhp_jtGuhk"; 
 
 // Helper function to safely get the API Key from various sources
 const getApiKey = (): string | undefined => {
