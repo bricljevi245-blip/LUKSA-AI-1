@@ -32,6 +32,40 @@ const ChatWidget: React.FC = () => {
     return /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/.test(text);
   };
 
+  // Logic to send captured lead to email AND Go High Level
+  const sendLeadToEmail = (text: string) => {
+    const emailMatch = text.match(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/);
+    const email = emailMatch ? emailMatch[0] : text;
+
+    // 1. Send to Owner (FormSubmit)
+    const formData = new FormData();
+    formData.append('email', email);
+    formData.append('source', 'LUKSA AI Chat Widget');
+    formData.append('_subject', '🤖 Nov Lead iz Chatbota - LUKSA AI');
+    formData.append('celotno_sporocilo', text);
+    formData.append('_captcha', 'false');
+    formData.append('_template', 'table');
+
+    fetch('https://formsubmit.co/luksaaiagencija@gmail.com', {
+        method: 'POST',
+        body: formData
+    }).catch(err => console.error("Failed to send lead to owner", err));
+
+    // 2. Send to Go High Level (Webhook for Automation)
+    const ghlData = {
+      email: email,
+      message: text,
+      source: "Chat Widget Website",
+      name: "Chat Visitor" // Default name as we might not have it yet
+    };
+
+    fetch('https://services.leadconnectorhq.com/hooks/fNDNIwFlvmuqwn6vTTdq/webhook-trigger/d4e68b19-c441-44d8-93a5-9144d7e011d0', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(ghlData)
+    }).catch(err => console.warn("Failed to send lead to GHL webhook", err));
+  };
+
   const handleSend = async () => {
     if (!inputValue.trim()) return;
 
@@ -48,8 +82,10 @@ const ChatWidget: React.FC = () => {
     if (containsEmail(userMsg) && !emailCaptured) {
       setEmailCaptured(true);
       setShowEmailSuccess(true);
-      // In a real app, you would send this to your backend here
-      console.log("🎯 LEAD CAPTURED:", userMsg);
+      
+      // Send to owner & automation
+      sendLeadToEmail(userMsg);
+
       setTimeout(() => setShowEmailSuccess(false), 3000);
     }
 
@@ -82,7 +118,7 @@ const ChatWidget: React.FC = () => {
       {showEmailSuccess && (
         <div className="mb-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg flex items-center gap-2 animate-fade-in-up">
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-          <span className="text-sm font-bold">Email uspešno shranjen!</span>
+          <span className="text-sm font-bold">Uspešno poslano!</span>
         </div>
       )}
 

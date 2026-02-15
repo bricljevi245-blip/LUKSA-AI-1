@@ -15,7 +15,6 @@ const FreePreviewPage: React.FC<FreePreviewPageProps> = ({ onBack }) => {
   const [status, setStatus] = useState<'idle' | 'submitting' | 'success'>('idle');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Scroll to top when component mounts
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
@@ -23,18 +22,11 @@ const FreePreviewPage: React.FC<FreePreviewPageProps> = ({ onBack }) => {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      
-      // Validation: Max 10MB
       if (file.size > 10 * 1024 * 1024) {
         alert("Datoteka je prevelika. Največja dovoljena velikost je 10MB.");
         return;
       }
-
-      setFormData({
-        ...formData,
-        file: file,
-        fileName: file.name
-      });
+      setFormData({ ...formData, file: file, fileName: file.name });
     }
   };
 
@@ -48,17 +40,11 @@ const FreePreviewPage: React.FC<FreePreviewPageProps> = ({ onBack }) => {
     e.stopPropagation();
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
        const file = e.dataTransfer.files[0];
-       
        if (file.size > 10 * 1024 * 1024) {
         alert("Datoteka je prevelika. Največja dovoljena velikost je 10MB.");
         return;
        }
-
-       setFormData({
-        ...formData,
-        file: file,
-        fileName: file.name
-      });
+       setFormData({ ...formData, file: file, fileName: file.name });
     }
   };
 
@@ -67,27 +53,40 @@ const FreePreviewPage: React.FC<FreePreviewPageProps> = ({ onBack }) => {
     setStatus('submitting');
 
     try {
-      // Using FormData to handle file uploads natively via email
+      // 1. Priprava za FormSubmit (Email lastniku)
       const submitData = new FormData();
       submitData.append('ime', formData.name);
       submitData.append('email', formData.email);
       submitData.append('opis_ideje', formData.description);
-      submitData.append('_subject', 'Nova zahteva za Brezplačen AI Predogled - LUKSA AI');
+      submitData.append('_subject', '✨ Zahteva za Brezplačen AI Predogled - LUKSA AI');
       submitData.append('_template', 'table');
       submitData.append('_captcha', 'false');
-      submitData.append('_next', 'false'); // Prevent redirection
 
       if (formData.file) {
-        // Appending as 'slika_izdelka' helps FormSubmit identify it as a file field
         submitData.append('slika_izdelka', formData.file);
       }
 
-      // Sending to luksaaiagencija@gmail.com via FormSubmit.co
-      // REMOVED headers to let browser handle multipart/form-data boundary automatically
-      const response = await fetch('https://formsubmit.co/luksaaiagencija@gmail.com', {
+      // 2. Priprava za GHL (Avtomatizacija)
+      const ghlData = {
+        name: formData.name,
+        email: formData.email,
+        description: formData.description,
+        source: "Free Preview Form Website"
+      };
+
+      // 3. Pošiljanje zahtevkov
+      const formSubmitPromise = fetch('https://formsubmit.co/luksaaiagencija@gmail.com', {
         method: 'POST',
         body: submitData, 
       });
+
+      const ghlPromise = fetch('https://services.leadconnectorhq.com/hooks/fNDNIwFlvmuqwn6vTTdq/webhook-trigger/d4e68b19-c441-44d8-93a5-9144d7e011d0', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(ghlData)
+      }).catch(err => console.warn("GHL Webhook Warning:", err));
+
+      const response = await formSubmitPromise;
 
       if (!response.ok) {
         throw new Error('Network response was not ok');
@@ -97,7 +96,7 @@ const FreePreviewPage: React.FC<FreePreviewPageProps> = ({ onBack }) => {
       setFormData({ name: '', email: '', description: '', file: null, fileName: '' });
     } catch (error) {
       console.error("Error submitting form:", error);
-      alert("Prišlo je do napake pri pošiljanju. Preverite velikost slike (max 10MB) ali poskusite kasneje.");
+      alert("Napaka pri pošiljanju. Prosimo poskusite ponovno.");
       setStatus('idle');
     }
   };
@@ -124,12 +123,11 @@ const FreePreviewPage: React.FC<FreePreviewPageProps> = ({ onBack }) => {
                Brezplačen <span className="text-transparent bg-clip-text bg-gradient-to-r from-luksa-cyan to-luksa-purple">AI Predogled</span>
              </h1>
              <p className="text-gray-400 text-lg leading-relaxed">
-               Naložite sliko svojega izdelka, opišite svojo vizijo in dovolite, da vam pokaževa moč LUKSA AI. Brez obveznosti.
+               Naložite sliko svojega izdelka, opišite svojo vizijo in dovolite, da vam pokaževa moč LUKSA AI.
              </p>
           </div>
 
           <div className="bg-luksa-card border border-white/10 rounded-2xl p-8 md:p-12 relative overflow-hidden shadow-2xl">
-             {/* Background Glow */}
              <div className="absolute top-0 right-0 w-64 h-64 bg-luksa-cyan/10 blur-[80px] rounded-full pointer-events-none"></div>
 
              {status === 'success' ? (
@@ -139,7 +137,7 @@ const FreePreviewPage: React.FC<FreePreviewPageProps> = ({ onBack }) => {
                    </div>
                    <h3 className="text-2xl font-bold text-white mb-4">Zahtevek uspešno poslan!</h3>
                    <p className="text-gray-400 mb-8">
-                     Luka in Sandra sta prejela vaš koncept. V kratkem boste na svoj e-mail prejeli AI generirano vizualizacijo.
+                     Vaši podatki so bili uspešno oddani. Kmalu prejmete potrditveno sporočilo.
                    </p>
                    <button 
                      onClick={() => setStatus('idle')} 
@@ -150,8 +148,6 @@ const FreePreviewPage: React.FC<FreePreviewPageProps> = ({ onBack }) => {
                 </div>
              ) : (
                 <form onSubmit={handleSubmit} className="space-y-8">
-                  
-                  {/* File Upload Area */}
                   <div 
                     className={`border-2 border-dashed rounded-xl p-8 text-center transition-all cursor-pointer group ${
                       formData.file ? 'border-luksa-cyan bg-luksa-cyan/5' : 'border-white/20 hover:border-luksa-purple/50 hover:bg-white/5'
@@ -160,14 +156,7 @@ const FreePreviewPage: React.FC<FreePreviewPageProps> = ({ onBack }) => {
                     onDrop={handleDrop}
                     onClick={() => fileInputRef.current?.click()}
                   >
-                    <input 
-                      type="file" 
-                      ref={fileInputRef} 
-                      onChange={handleFileChange} 
-                      className="hidden" 
-                      accept="image/*"
-                    />
-                    
+                    <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" />
                     {formData.file ? (
                       <div className="flex flex-col items-center">
                         <div className="w-12 h-12 bg-luksa-cyan/20 text-luksa-cyan rounded-full flex items-center justify-center mb-3">
@@ -195,7 +184,7 @@ const FreePreviewPage: React.FC<FreePreviewPageProps> = ({ onBack }) => {
                           value={formData.description}
                           onChange={(e) => setFormData({...formData, description: e.target.value})}
                           className="w-full bg-luksa-dark/50 border border-white/10 rounded-lg p-4 text-white placeholder-gray-600 focus:border-luksa-cyan focus:ring-1 focus:ring-luksa-cyan outline-none transition-all resize-none h-32"
-                          placeholder="Npr: Želim, da moj izdelek stoji na površini Marsa z neonskimi lučmi v ozadju..."
+                          placeholder="Npr: Želim, da moj izdelek stoji na površini Marsa..."
                         ></textarea>
                      </div>
 
@@ -236,7 +225,7 @@ const FreePreviewPage: React.FC<FreePreviewPageProps> = ({ onBack }) => {
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
-                        Obdelava podatkov...
+                        Obdelava...
                       </>
                     ) : (
                       'Generiraj brezplačen predogled'

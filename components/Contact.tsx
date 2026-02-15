@@ -14,18 +14,11 @@ const Contact: React.FC = () => {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      
-      // Validacija velikosti (Max 10MB)
       if (file.size > 10 * 1024 * 1024) {
         alert("Datoteka je prevelika. Največja dovoljena velikost je 10MB.");
         return;
       }
-
-      setFormData({
-        ...formData,
-        file: file,
-        fileName: file.name
-      });
+      setFormData({ ...formData, file: file, fileName: file.name });
     }
   };
 
@@ -39,17 +32,11 @@ const Contact: React.FC = () => {
     e.stopPropagation();
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
        const file = e.dataTransfer.files[0];
-       
        if (file.size > 10 * 1024 * 1024) {
         alert("Datoteka je prevelika. Največja dovoljena velikost je 10MB.");
         return;
        }
-
-       setFormData({
-        ...formData,
-        file: file,
-        fileName: file.name
-      });
+       setFormData({ ...formData, file: file, fileName: file.name });
     }
   };
 
@@ -58,38 +45,55 @@ const Contact: React.FC = () => {
     setStatus('submitting');
     
     try {
+      // 1. Priprava podatkov za FormSubmit (Email lastniku s priponko)
       const submitData = new FormData();
       submitData.append('ime', formData.name);
       submitData.append('email', formData.email);
       submitData.append('sporocilo', formData.message);
-      submitData.append('_subject', 'Novo sporočilo s priponko - LUKSA AI Kontakt');
+      submitData.append('_subject', '🚀 Novo sporočilo - LUKSA AI Kontakt');
       submitData.append('_template', 'table');
       submitData.append('_captcha', 'false');
-      // Onemogočimo avtomatski odgovor FormSubmit-a, ker imamo svojo UI potrditev
-      submitData.append('_next', 'false');
-
+      
       if (formData.file) {
-        // Ime polja 'priponka' zagotovi, da FormSubmit to obravnava kot datoteko
         submitData.append('priponka', formData.file);
       }
 
-      // KLJUČNO: Ne nastavljamo 'headers' ročno. 
-      // Brskalnik bo samodejno nastavil pravilen multipart/form-data boundary.
-      const response = await fetch('https://formsubmit.co/luksaaiagencija@gmail.com', {
+      // 2. Priprava podatkov za Go High Level (Avtomatizacija)
+      const ghlData = {
+        name: formData.name,
+        email: formData.email,
+        message: formData.message,
+        source: "Contact Form Website"
+      };
+
+      // 3. Pošiljanje obeh zahtevkov paralelno
+      const formSubmitPromise = fetch('https://formsubmit.co/luksaaiagencija@gmail.com', {
         method: 'POST',
         body: submitData,
       });
+
+      const ghlPromise = fetch('https://services.leadconnectorhq.com/hooks/fNDNIwFlvmuqwn6vTTdq/webhook-trigger/d4e68b19-c441-44d8-93a5-9144d7e011d0', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(ghlData)
+      }).catch(err => console.warn("GHL Webhook Warning:", err)); // Ne ustavimo procesa če GHL javi napako (npr. CORS), saj request ponavadi vseeno pride skozi
+
+      const response = await formSubmitPromise;
 
       if (!response.ok) {
         throw new Error('Network response was not ok');
       }
 
-      console.log("Form Submitted Successfully");
+      // Počakamo še na GHL (optional, usually fire & forget is okay, but waiting ensures sync)
+      // await ghlPromise; 
+
       setStatus('success');
       setFormData({ name: '', email: '', message: '', file: null, fileName: '' });
     } catch (error) {
       console.error("Error submitting form:", error);
-      alert("Prišlo je do napake pri pošiljanju. Prosimo, preverite internetno povezavo in poskusite znova.");
+      alert("Napaka pri pošiljanju. Preverite internetno povezavo.");
       setStatus('idle');
     }
   };
@@ -98,7 +102,6 @@ const Contact: React.FC = () => {
     <section id="contact" className="py-24 bg-luksa-dark relative">
       <div className="container mx-auto px-6">
         <div className="max-w-4xl mx-auto bg-luksa-card border border-white/10 rounded-2xl p-8 md:p-12 relative overflow-hidden">
-          {/* Decorative Elements */}
           <div className="absolute top-0 right-0 w-64 h-64 bg-luksa-purple/20 blur-[80px] rounded-full pointer-events-none"></div>
           
           <div className="relative z-10 text-center mb-10">
@@ -106,7 +109,7 @@ const Contact: React.FC = () => {
               Ste pripravljeni na digitalno <span className="text-luksa-purple">preobrazbo?</span>
             </h2>
             <p className="text-gray-400">
-              Spodaj vnesite svoje podatke in priložite fotografijo vašega izdelka (neobvezno). Kontaktirali vas bomo s prilagojenim AI konceptom.
+              Izpolnite obrazec spodaj. Odgovoriva v roku 24 ur.
             </p>
           </div>
 
@@ -116,7 +119,7 @@ const Contact: React.FC = () => {
                   <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
                 </div>
                 <h3 className="text-2xl font-bold text-white mb-2">Zahtevek prejet!</h3>
-                <p className="text-gray-400">Dobrodošli v prihodnosti. Preverite svoj poštni predal za naše avtomatizirano sporočilo.</p>
+                <p className="text-gray-400">Hvala za zaupanje. Preverite svoj e-poštni predal za potrditev.</p>
                 <button onClick={() => setStatus('idle')} className="mt-6 text-luksa-cyan underline hover:text-white">Pošlji novo sporočilo</button>
              </div>
           ) : (
@@ -154,11 +157,10 @@ const Contact: React.FC = () => {
                   value={formData.message}
                   onChange={(e) => setFormData({...formData, message: e.target.value})}
                   className="w-full bg-luksa-dark/50 border border-white/10 rounded-lg p-4 text-white placeholder-gray-600 focus:border-luksa-cyan focus:ring-1 focus:ring-luksa-cyan outline-none transition-all resize-none"
-                  placeholder="Povejte nam o svojem izdelku ali viziji..."
+                  placeholder="Povejte nam o svojem projektu..."
                 ></textarea>
               </div>
 
-              {/* File Upload Area */}
               <div className="space-y-2">
                  <label className="text-sm font-medium text-gray-300 ml-1">Naloži fotografijo (Opcijsko, max 10MB)</label>
                  <div 
@@ -169,14 +171,7 @@ const Contact: React.FC = () => {
                     onDrop={handleDrop}
                     onClick={() => fileInputRef.current?.click()}
                   >
-                    <input 
-                      type="file" 
-                      ref={fileInputRef} 
-                      onChange={handleFileChange} 
-                      className="hidden" 
-                      accept="image/*"
-                    />
-                    
+                    <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" />
                     {formData.file ? (
                       <div className="flex items-center justify-center gap-3">
                         <div className="w-10 h-10 bg-luksa-cyan/20 text-luksa-cyan rounded-full flex items-center justify-center">
