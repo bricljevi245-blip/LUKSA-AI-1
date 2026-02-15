@@ -45,14 +45,20 @@ const Contact: React.FC = () => {
     setStatus('submitting');
     
     try {
-      // 1. Priprava podatkov za FormSubmit (Email lastniku s priponko)
+      // 1. Priprava podatkov za FormSubmit (Email lastniku + AUTO RESPONSE stranki)
       const submitData = new FormData();
       submitData.append('ime', formData.name);
-      submitData.append('email', formData.email);
+      submitData.append('email', formData.email); // To polje FormSubmit uporabi za odgovor
       submitData.append('sporocilo', formData.message);
+      
+      // KONFIGURACIJA ZA LASTNIKA
       submitData.append('_subject', '🚀 Novo sporočilo - LUKSA AI Kontakt');
       submitData.append('_template', 'table');
       submitData.append('_captcha', 'false');
+      
+      // KONFIGURACIJA ZA STRANKO (Auto-Response)
+      // To zagotovi, da stranka dobi mail, tudi če GHL zataji
+      submitData.append('_autoresponse', 'Vaše sporočilo je bilo uspešno prejeto! Luka in Sandra bosta vašo vizijo pregledala v najkrajšem možnem času.');
       
       if (formData.file) {
         submitData.append('priponka', formData.file);
@@ -66,28 +72,24 @@ const Contact: React.FC = () => {
         source: "Contact Form Website"
       };
 
-      // 3. Pošiljanje obeh zahtevkov paralelno
+      // 3. Pošiljanje zahtevkov
       const formSubmitPromise = fetch('https://formsubmit.co/luksaaiagencija@gmail.com', {
         method: 'POST',
         body: submitData,
       });
 
-      const ghlPromise = fetch('https://services.leadconnectorhq.com/hooks/fNDNIwFlvmuqwn6vTTdq/webhook-trigger/d4e68b19-c441-44d8-93a5-9144d7e011d0', {
+      // GHL Webhook - pošljemo asinhrono
+      fetch('https://services.leadconnectorhq.com/hooks/fNDNIwFlvmuqwn6vTTdq/webhook-trigger/d4e68b19-c441-44d8-93a5-9144d7e011d0', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(ghlData)
-      }).catch(err => console.warn("GHL Webhook Warning:", err)); // Ne ustavimo procesa če GHL javi napako (npr. CORS), saj request ponavadi vseeno pride skozi
+      }).catch(err => console.warn("GHL Webhook Warning:", err));
 
       const response = await formSubmitPromise;
 
       if (!response.ok) {
         throw new Error('Network response was not ok');
       }
-
-      // Počakamo še na GHL (optional, usually fire & forget is okay, but waiting ensures sync)
-      // await ghlPromise; 
 
       setStatus('success');
       setFormData({ name: '', email: '', message: '', file: null, fileName: '' });
@@ -119,7 +121,7 @@ const Contact: React.FC = () => {
                   <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
                 </div>
                 <h3 className="text-2xl font-bold text-white mb-2">Zahtevek prejet!</h3>
-                <p className="text-gray-400">Hvala za zaupanje. Preverite svoj e-poštni predal za potrditev.</p>
+                <p className="text-gray-400">Hvala za zaupanje. Na vaš email smo poslali potrditev prejema.</p>
                 <button onClick={() => setStatus('idle')} className="mt-6 text-luksa-cyan underline hover:text-white">Pošlji novo sporočilo</button>
              </div>
           ) : (

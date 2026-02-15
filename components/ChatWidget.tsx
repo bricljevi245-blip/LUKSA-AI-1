@@ -37,7 +37,7 @@ const ChatWidget: React.FC = () => {
     const emailMatch = text.match(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/);
     const email = emailMatch ? emailMatch[0] : text;
 
-    // 1. Send to Owner (FormSubmit)
+    // 1. Send to Owner (FormSubmit) WITH AUTO RESPONSE
     const formData = new FormData();
     formData.append('email', email);
     formData.append('source', 'LUKSA AI Chat Widget');
@@ -45,6 +45,9 @@ const ChatWidget: React.FC = () => {
     formData.append('celotno_sporocilo', text);
     formData.append('_captcha', 'false');
     formData.append('_template', 'table');
+    
+    // Auto Response for the chatter
+    formData.append('_autoresponse', 'Hvala! Vaš email je zabeležen. Kmalu vam pošljemo več informacij.');
 
     fetch('https://formsubmit.co/luksaaiagencija@gmail.com', {
         method: 'POST',
@@ -56,7 +59,7 @@ const ChatWidget: React.FC = () => {
       email: email,
       message: text,
       source: "Chat Widget Website",
-      name: "Chat Visitor" // Default name as we might not have it yet
+      name: "Chat Visitor"
     };
 
     fetch('https://services.leadconnectorhq.com/hooks/fNDNIwFlvmuqwn6vTTdq/webhook-trigger/d4e68b19-c441-44d8-93a5-9144d7e011d0', {
@@ -90,11 +93,9 @@ const ChatWidget: React.FC = () => {
     }
 
     try {
-      // CTA Logic: Trigger every 3rd message if we don't have an email yet
       const userMsgCount = newMessages.filter(m => m.role === 'user').length;
       const isCtaTurn = !emailCaptured && (userMsgCount > 0) && (userMsgCount % 3 === 0);
 
-      // Prepare history (excluding the message we are about to send via the turn)
       const history = messages.map(m => ({
         role: m.role,
         parts: [{ text: m.text }]

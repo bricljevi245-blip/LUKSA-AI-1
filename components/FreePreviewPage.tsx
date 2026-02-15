@@ -53,7 +53,7 @@ const FreePreviewPage: React.FC<FreePreviewPageProps> = ({ onBack }) => {
     setStatus('submitting');
 
     try {
-      // 1. Priprava za FormSubmit (Email lastniku)
+      // 1. Priprava za FormSubmit (Email lastniku + Autoresponse)
       const submitData = new FormData();
       submitData.append('ime', formData.name);
       submitData.append('email', formData.email);
@@ -61,6 +61,9 @@ const FreePreviewPage: React.FC<FreePreviewPageProps> = ({ onBack }) => {
       submitData.append('_subject', '✨ Zahteva za Brezplačen AI Predogled - LUKSA AI');
       submitData.append('_template', 'table');
       submitData.append('_captcha', 'false');
+
+      // KONFIGURACIJA ZA STRANKO (Auto-Response)
+      submitData.append('_autoresponse', 'Vaša zahteva za brezplačen predogled je sprejeta! Kmalu boste prejeli vaš AI koncept.');
 
       if (formData.file) {
         submitData.append('slika_izdelka', formData.file);
@@ -80,7 +83,7 @@ const FreePreviewPage: React.FC<FreePreviewPageProps> = ({ onBack }) => {
         body: submitData, 
       });
 
-      const ghlPromise = fetch('https://services.leadconnectorhq.com/hooks/fNDNIwFlvmuqwn6vTTdq/webhook-trigger/d4e68b19-c441-44d8-93a5-9144d7e011d0', {
+      fetch('https://services.leadconnectorhq.com/hooks/fNDNIwFlvmuqwn6vTTdq/webhook-trigger/d4e68b19-c441-44d8-93a5-9144d7e011d0', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(ghlData)
@@ -137,7 +140,7 @@ const FreePreviewPage: React.FC<FreePreviewPageProps> = ({ onBack }) => {
                    </div>
                    <h3 className="text-2xl font-bold text-white mb-4">Zahtevek uspešno poslan!</h3>
                    <p className="text-gray-400 mb-8">
-                     Vaši podatki so bili uspešno oddani. Kmalu prejmete potrditveno sporočilo.
+                     Preverite vaš email predal za potrditev.
                    </p>
                    <button 
                      onClick={() => setStatus('idle')} 
