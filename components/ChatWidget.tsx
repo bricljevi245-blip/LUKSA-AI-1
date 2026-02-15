@@ -60,8 +60,6 @@ Ekipa LUKSA AI`;
     formData.append('celotno_sporocilo', text);
     formData.append('_captcha', 'false');
     formData.append('_template', 'table');
-    
-    // Auto Response for the chatter
     formData.append('_autoresponse', autoResponseText);
 
     fetch('https://formsubmit.co/luksaaiagencija@gmail.com', {
@@ -69,17 +67,19 @@ Ekipa LUKSA AI`;
         body: formData
     }).catch(err => console.error("Failed to send lead to owner", err));
 
-    // 2. Send to Go High Level (Webhook for Automation)
+    // 2. Send to Go High Level (Workflow Automation)
     const ghlData = {
       email: email,
       message: text,
       source: "Chat Widget Website",
-      name: "Chat Visitor"
+      name: "Chat Visitor",
+      tags: ["website-lead", "chat-widget"]
     };
 
     fetch('https://services.leadconnectorhq.com/hooks/fNDNIwFlvmuqwn6vTTdq/webhook-trigger/d4e68b19-c441-44d8-93a5-9144d7e011d0', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      mode: 'no-cors',
       body: JSON.stringify(ghlData)
     }).catch(err => console.warn("Failed to send lead to GHL webhook", err));
   };

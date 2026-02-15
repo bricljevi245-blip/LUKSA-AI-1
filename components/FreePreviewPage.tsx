@@ -76,31 +76,33 @@ Ekipa LUKSA AI`;
       submitData.append('_subject', '✨ Zahteva za Brezplačen AI Predogled - LUKSA AI');
       submitData.append('_template', 'table');
       submitData.append('_captcha', 'false');
-
-      // KONFIGURACIJA ZA STRANKO (Auto-Response)
       submitData.append('_autoresponse', autoResponseText);
 
       if (formData.file) {
         submitData.append('slika_izdelka', formData.file);
       }
 
-      // 2. Priprava za GHL (Avtomatizacija)
+      // 2. Priprava za GHL (Workflow Automation)
       const ghlData = {
         name: formData.name,
+        full_name: formData.name,
         email: formData.email,
         description: formData.description,
-        source: "Free Preview Form Website"
+        source: "Free Preview Form Website",
+        tags: ["website-lead", "free-preview"]
       };
 
-      // 3. Pošiljanje zahtevkov
+      // 3. Pošiljanje - FormSubmit
       const formSubmitPromise = fetch('https://formsubmit.co/luksaaiagencija@gmail.com', {
         method: 'POST',
         body: submitData, 
       });
 
+      // 4. Pošiljanje - GHL Webhook ('no-cors' mode)
       fetch('https://services.leadconnectorhq.com/hooks/fNDNIwFlvmuqwn6vTTdq/webhook-trigger/d4e68b19-c441-44d8-93a5-9144d7e011d0', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        mode: 'no-cors',
         body: JSON.stringify(ghlData)
       }).catch(err => console.warn("GHL Webhook Warning:", err));
 

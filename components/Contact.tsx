@@ -45,7 +45,7 @@ const Contact: React.FC = () => {
     setStatus('submitting');
     
     try {
-      // Besedilo za avtomatski odgovor
+      // Besedilo za avtomatski odgovor (Backup, če GHL zamuja)
       const autoResponseText = `Spoštovani,
 
 zahvaljujemo se vam za vaše sporočilo in zanimanje za storitve agencije Luksa Ai.
@@ -60,44 +60,49 @@ Z lepimi pozdravi,
 
 Ekipa LUKSA AI`;
 
-      // 1. Priprava podatkov za FormSubmit
+      // 1. Priprava podatkov za FormSubmit (Email lastniku + Takojšen odgovor stranki)
       const submitData = new FormData();
       submitData.append('ime', formData.name);
       submitData.append('email', formData.email);
       submitData.append('sporocilo', formData.message);
-      
-      // KONFIGURACIJA ZA LASTNIKA (Obvestilo vam)
       submitData.append('_subject', '🚀 Novo sporočilo - LUKSA AI Kontakt');
       submitData.append('_template', 'table');
       submitData.append('_captcha', 'false');
-      
-      // KONFIGURACIJA ZA STRANKO (Auto-Response)
       submitData.append('_autoresponse', autoResponseText);
       
       if (formData.file) {
         submitData.append('priponka', formData.file);
       }
 
-      // 2. Priprava podatkov za Go High Level (Avtomatizacija)
+      // 2. Priprava podatkov za Go High Level (Workflow Automation)
       const ghlData = {
         name: formData.name,
+        full_name: formData.name, // GHL often looks for full_name
         email: formData.email,
         message: formData.message,
-        source: "Contact Form Website"
+        source: "Contact Form Website",
+        tags: ["website-lead", "contact-form"] // Tags help triggers in GHL
       };
 
-      // 3. Pošiljanje zahtevkov
+      // 3. Pošiljanje - FormSubmit (Email)
       const formSubmitPromise = fetch('https://formsubmit.co/luksaaiagencija@gmail.com', {
         method: 'POST',
         body: submitData,
       });
 
-      // GHL Webhook
+      // 4. Pošiljanje - GHL Webhook
+      // Uporabljamo 'no-cors', da preprečimo blokade brskalnika, čeprav ne bomo videli statusa odgovora.
+      // To zagotovi, da request zapusti brskalnik.
       fetch('https://services.leadconnectorhq.com/hooks/fNDNIwFlvmuqwn6vTTdq/webhook-trigger/d4e68b19-c441-44d8-93a5-9144d7e011d0', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        mode: 'no-cors', 
         body: JSON.stringify(ghlData)
-      }).catch(err => console.warn("GHL Webhook Warning:", err));
+      }).then(() => {
+        console.log("GHL Webhook sent successfully (opaque mode)");
+      }).catch(err => {
+        console.error("GHL Webhook Error:", err);
+      });
 
       const response = await formSubmitPromise;
 
