@@ -37,6 +37,21 @@ const ChatWidget: React.FC = () => {
     const emailMatch = text.match(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/);
     const email = emailMatch ? emailMatch[0] : text;
 
+    // Besedilo za avtomatski odgovor
+    const autoResponseText = `Spoštovani,
+
+zahvaljujemo se vam za vaše sporočilo in zanimanje za storitve agencije Luksa Ai.
+
+Vaše povpraševanje smo uspešno prejeli. Naša ekipa si bo vzela čas in skrbno pregledala vaše specifične potrebe, saj verjamemo, da vsaka implementacija umetne inteligence zahteva premišljen in strokovno podkovan pristop. Naš cilj je poiskati rešitve, ki bodo vaši organizaciji prinesle največjo dodano vrednost in optimizirale vaše delovne procese.
+
+Na vaše sporočilo bomo odgovorili v najkrajšem možnem času – običajno v roku 24 ur. V kolikor gre za nujno zadevo, nam lahko odgovorite na to e-pošto z dodatnimi podrobnostmi.
+
+Medtem ko čakate na naš odgovor, vas vabimo, da obiščete našo spletno stran in si ogledate naše najnovejše projekte ter vpoglede v prihodnost AI tehnologij.
+
+Z lepimi pozdravi,
+
+Ekipa LUKSA AI`;
+
     // 1. Send to Owner (FormSubmit) WITH AUTO RESPONSE
     const formData = new FormData();
     formData.append('email', email);
@@ -47,7 +62,7 @@ const ChatWidget: React.FC = () => {
     formData.append('_template', 'table');
     
     // Auto Response for the chatter
-    formData.append('_autoresponse', 'Hvala! Vaš email je zabeležen. Kmalu vam pošljemo več informacij.');
+    formData.append('_autoresponse', autoResponseText);
 
     fetch('https://formsubmit.co/luksaaiagencija@gmail.com', {
         method: 'POST',

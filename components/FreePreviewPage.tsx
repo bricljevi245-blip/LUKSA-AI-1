@@ -53,7 +53,22 @@ const FreePreviewPage: React.FC<FreePreviewPageProps> = ({ onBack }) => {
     setStatus('submitting');
 
     try {
-      // 1. Priprava za FormSubmit (Email lastniku + Autoresponse)
+      // Besedilo za avtomatski odgovor
+      const autoResponseText = `Spoštovani,
+
+zahvaljujemo se vam za vaše sporočilo in zanimanje za storitve agencije Luksa Ai.
+
+Vaše povpraševanje smo uspešno prejeli. Naša ekipa si bo vzela čas in skrbno pregledala vaše specifične potrebe, saj verjamemo, da vsaka implementacija umetne inteligence zahteva premišljen in strokovno podkovan pristop. Naš cilj je poiskati rešitve, ki bodo vaši organizaciji prinesle največjo dodano vrednost in optimizirale vaše delovne procese.
+
+Na vaše sporočilo bomo odgovorili v najkrajšem možnem času – običajno v roku 24 ur. V kolikor gre za nujno zadevo, nam lahko odgovorite na to e-pošto z dodatnimi podrobnostmi.
+
+Medtem ko čakate na naš odgovor, vas vabimo, da obiščete našo spletno stran in si ogledate naše najnovejše projekte ter vpoglede v prihodnost AI tehnologij.
+
+Z lepimi pozdravi,
+
+Ekipa LUKSA AI`;
+
+      // 1. Priprava za FormSubmit
       const submitData = new FormData();
       submitData.append('ime', formData.name);
       submitData.append('email', formData.email);
@@ -63,7 +78,7 @@ const FreePreviewPage: React.FC<FreePreviewPageProps> = ({ onBack }) => {
       submitData.append('_captcha', 'false');
 
       // KONFIGURACIJA ZA STRANKO (Auto-Response)
-      submitData.append('_autoresponse', 'Vaša zahteva za brezplačen predogled je sprejeta! Kmalu boste prejeli vaš AI koncept.');
+      submitData.append('_autoresponse', autoResponseText);
 
       if (formData.file) {
         submitData.append('slika_izdelka', formData.file);

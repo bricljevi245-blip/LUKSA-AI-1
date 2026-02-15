@@ -45,20 +45,34 @@ const Contact: React.FC = () => {
     setStatus('submitting');
     
     try {
-      // 1. Priprava podatkov za FormSubmit (Email lastniku + AUTO RESPONSE stranki)
+      // Besedilo za avtomatski odgovor
+      const autoResponseText = `Spoštovani,
+
+zahvaljujemo se vam za vaše sporočilo in zanimanje za storitve agencije Luksa Ai.
+
+Vaše povpraševanje smo uspešno prejeli. Naša ekipa si bo vzela čas in skrbno pregledala vaše specifične potrebe, saj verjamemo, da vsaka implementacija umetne inteligence zahteva premišljen in strokovno podkovan pristop. Naš cilj je poiskati rešitve, ki bodo vaši organizaciji prinesle največjo dodano vrednost in optimizirale vaše delovne procese.
+
+Na vaše sporočilo bomo odgovorili v najkrajšem možnem času – običajno v roku 24 ur. V kolikor gre za nujno zadevo, nam lahko odgovorite na to e-pošto z dodatnimi podrobnostmi.
+
+Medtem ko čakate na naš odgovor, vas vabimo, da obiščete našo spletno stran in si ogledate naše najnovejše projekte ter vpoglede v prihodnost AI tehnologij.
+
+Z lepimi pozdravi,
+
+Ekipa LUKSA AI`;
+
+      // 1. Priprava podatkov za FormSubmit
       const submitData = new FormData();
       submitData.append('ime', formData.name);
-      submitData.append('email', formData.email); // To polje FormSubmit uporabi za odgovor
+      submitData.append('email', formData.email);
       submitData.append('sporocilo', formData.message);
       
-      // KONFIGURACIJA ZA LASTNIKA
+      // KONFIGURACIJA ZA LASTNIKA (Obvestilo vam)
       submitData.append('_subject', '🚀 Novo sporočilo - LUKSA AI Kontakt');
       submitData.append('_template', 'table');
       submitData.append('_captcha', 'false');
       
       // KONFIGURACIJA ZA STRANKO (Auto-Response)
-      // To zagotovi, da stranka dobi mail, tudi če GHL zataji
-      submitData.append('_autoresponse', 'Vaše sporočilo je bilo uspešno prejeto! Luka in Sandra bosta vašo vizijo pregledala v najkrajšem možnem času.');
+      submitData.append('_autoresponse', autoResponseText);
       
       if (formData.file) {
         submitData.append('priponka', formData.file);
@@ -78,7 +92,7 @@ const Contact: React.FC = () => {
         body: submitData,
       });
 
-      // GHL Webhook - pošljemo asinhrono
+      // GHL Webhook
       fetch('https://services.leadconnectorhq.com/hooks/fNDNIwFlvmuqwn6vTTdq/webhook-trigger/d4e68b19-c441-44d8-93a5-9144d7e011d0', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
