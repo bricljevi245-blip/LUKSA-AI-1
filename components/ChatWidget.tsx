@@ -81,11 +81,9 @@ Ekipa LUKSA AI`;
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
-        'Accept': 'application/json'
       },
+      keepalive: true, // KLJUČNO ZA ZANESLJIVOST
       body: JSON.stringify(ghlData)
-    }).then(res => {
-      console.log("GHL Chat Trigger Status:", res.status);
     }).catch(err => console.warn("Failed to send lead to GHL webhook", err));
   };
 

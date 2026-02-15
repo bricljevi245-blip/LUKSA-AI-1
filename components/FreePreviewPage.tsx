@@ -93,23 +93,22 @@ Ekipa LUKSA AI`;
         tags: ["website-lead", "free-preview"]
       };
 
-      // 3. Pošiljanje - FormSubmit
-      const formSubmitPromise = fetch('https://formsubmit.co/luksaaiagencija@gmail.com', {
-        method: 'POST',
-        body: submitData, 
-      });
-
-      // 4. Pošiljanje - GHL Webhook (Removed no-cors)
+      // 3. Pošiljanje - GHL Webhook
+      // keepalive: true zagotavlja, da zahteva preživi zaprtje strani
       fetch('https://services.leadconnectorhq.com/hooks/fNDNIwFlvmuqwn6vTTdq/webhook-trigger/d4e68b19-c441-44d8-93a5-9144d7e011d0', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'Accept': 'application/json'
         },
+        keepalive: true, // KLJUČNO
         body: JSON.stringify(ghlData)
-      }).then(res => {
-        console.log("GHL Response Status:", res.status);
       }).catch(err => console.warn("GHL Webhook Warning:", err));
+
+      // 4. Pošiljanje - FormSubmit
+      const formSubmitPromise = fetch('https://formsubmit.co/luksaaiagencija@gmail.com', {
+        method: 'POST',
+        body: submitData, 
+      });
 
       const response = await formSubmitPromise;
 

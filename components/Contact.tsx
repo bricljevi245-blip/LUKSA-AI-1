@@ -75,7 +75,6 @@ Ekipa LUKSA AI`;
       }
 
       // 2. Priprava podatkov za Go High Level (Workflow Automation)
-      // Dodana polja za boljšo kompatibilnost (full_name, contact_email)
       const ghlData = {
         name: formData.name,
         full_name: formData.name,
@@ -86,25 +85,23 @@ Ekipa LUKSA AI`;
         tags: ["website-lead", "contact-form"]
       };
 
-      // 3. Pošiljanje - FormSubmit (Email)
-      const formSubmitPromise = fetch('https://formsubmit.co/luksaaiagencija@gmail.com', {
-        method: 'POST',
-        body: submitData,
-      });
-
-      // 4. Pošiljanje - GHL Webhook
-      // Odstranjen 'no-cors', da se pravilno pošlje Content-Type header
+      // 3. Pošiljanje - GHL Webhook
+      // Dodano: keepalive: true zagotovi, da se podatki pošljejo tudi če se stran zapre/osveži.
       fetch('https://services.leadconnectorhq.com/hooks/fNDNIwFlvmuqwn6vTTdq/webhook-trigger/d4e68b19-c441-44d8-93a5-9144d7e011d0', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'Accept': 'application/json'
         },
+        keepalive: true, // KLJUČNO ZA ZANESLJIVOST
         body: JSON.stringify(ghlData)
-      }).then(res => {
-        console.log("GHL Response Status:", res.status);
       }).catch(err => {
         console.error("GHL Webhook Error:", err);
+      });
+
+      // 4. Pošiljanje - FormSubmit (Email)
+      const formSubmitPromise = fetch('https://formsubmit.co/luksaaiagencija@gmail.com', {
+        method: 'POST',
+        body: submitData,
       });
 
       const response = await formSubmitPromise;
