@@ -45,7 +45,7 @@ const Contact: React.FC = () => {
     setStatus('submitting');
     
     try {
-      // Besedilo za avtomatski odgovor (Backup, če GHL zamuja)
+      // Besedilo za avtomatski odgovor (Backup via FormSubmit)
       const autoResponseText = `Spoštovani,
 
 zahvaljujemo se vam za vaše sporočilo in zanimanje za storitve agencije Luksa Ai.
@@ -60,7 +60,7 @@ Z lepimi pozdravi,
 
 Ekipa LUKSA AI`;
 
-      // 1. Priprava podatkov za FormSubmit (Email lastniku + Takojšen odgovor stranki)
+      // 1. Priprava podatkov za FormSubmit (Email lastniku + Backup odgovor)
       const submitData = new FormData();
       submitData.append('ime', formData.name);
       submitData.append('email', formData.email);
@@ -75,13 +75,15 @@ Ekipa LUKSA AI`;
       }
 
       // 2. Priprava podatkov za Go High Level (Workflow Automation)
+      // Dodana polja za boljšo kompatibilnost (full_name, contact_email)
       const ghlData = {
         name: formData.name,
-        full_name: formData.name, // GHL often looks for full_name
+        full_name: formData.name,
         email: formData.email,
+        contact_email: formData.email,
         message: formData.message,
         source: "Contact Form Website",
-        tags: ["website-lead", "contact-form"] // Tags help triggers in GHL
+        tags: ["website-lead", "contact-form"]
       };
 
       // 3. Pošiljanje - FormSubmit (Email)
@@ -91,15 +93,16 @@ Ekipa LUKSA AI`;
       });
 
       // 4. Pošiljanje - GHL Webhook
-      // Uporabljamo 'no-cors', da preprečimo blokade brskalnika, čeprav ne bomo videli statusa odgovora.
-      // To zagotovi, da request zapusti brskalnik.
+      // Odstranjen 'no-cors', da se pravilno pošlje Content-Type header
       fetch('https://services.leadconnectorhq.com/hooks/fNDNIwFlvmuqwn6vTTdq/webhook-trigger/d4e68b19-c441-44d8-93a5-9144d7e011d0', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        mode: 'no-cors', 
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
         body: JSON.stringify(ghlData)
-      }).then(() => {
-        console.log("GHL Webhook sent successfully (opaque mode)");
+      }).then(res => {
+        console.log("GHL Response Status:", res.status);
       }).catch(err => {
         console.error("GHL Webhook Error:", err);
       });

@@ -70,6 +70,7 @@ Ekipa LUKSA AI`;
     // 2. Send to Go High Level (Workflow Automation)
     const ghlData = {
       email: email,
+      contact_email: email,
       message: text,
       source: "Chat Widget Website",
       name: "Chat Visitor",
@@ -78,9 +79,13 @@ Ekipa LUKSA AI`;
 
     fetch('https://services.leadconnectorhq.com/hooks/fNDNIwFlvmuqwn6vTTdq/webhook-trigger/d4e68b19-c441-44d8-93a5-9144d7e011d0', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      mode: 'no-cors',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
       body: JSON.stringify(ghlData)
+    }).then(res => {
+      console.log("GHL Chat Trigger Status:", res.status);
     }).catch(err => console.warn("Failed to send lead to GHL webhook", err));
   };
 

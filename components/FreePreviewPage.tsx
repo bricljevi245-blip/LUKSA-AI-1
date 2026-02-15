@@ -87,6 +87,7 @@ Ekipa LUKSA AI`;
         name: formData.name,
         full_name: formData.name,
         email: formData.email,
+        contact_email: formData.email,
         description: formData.description,
         source: "Free Preview Form Website",
         tags: ["website-lead", "free-preview"]
@@ -98,12 +99,16 @@ Ekipa LUKSA AI`;
         body: submitData, 
       });
 
-      // 4. Pošiljanje - GHL Webhook ('no-cors' mode)
+      // 4. Pošiljanje - GHL Webhook (Removed no-cors)
       fetch('https://services.leadconnectorhq.com/hooks/fNDNIwFlvmuqwn6vTTdq/webhook-trigger/d4e68b19-c441-44d8-93a5-9144d7e011d0', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        mode: 'no-cors',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
         body: JSON.stringify(ghlData)
+      }).then(res => {
+        console.log("GHL Response Status:", res.status);
       }).catch(err => console.warn("GHL Webhook Warning:", err));
 
       const response = await formSubmitPromise;
