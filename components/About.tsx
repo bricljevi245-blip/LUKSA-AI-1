@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 
 // Bazen vseh slik
 const rawImages = [
+  // 🟢 NOVO: Vaša Hulk Mass Extreme slika
+  "https://storage.googleapis.com/msgsndr/fNDNIwFlvmuqwn6vTTdq/media/6993492154da0410bb4f0e2d.webp",
+  
   "https://storage.googleapis.com/msgsndr/fNDNIwFlvmuqwn6vTTdq/media/6990301b899b88538f7e742f.webp",
   "https://storage.googleapis.com/msgsndr/fNDNIwFlvmuqwn6vTTdq/media/6990301b899b882c0d7e7430.webp",
   "https://storage.googleapis.com/msgsndr/fNDNIwFlvmuqwn6vTTdq/media/6990301bc086656144c88f4f.webp",
