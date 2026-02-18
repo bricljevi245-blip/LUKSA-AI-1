@@ -1,4 +1,4 @@
-import React, { useState, Suspense, lazy, type ReactNode, type ErrorInfo } from 'react';
+import React, { useState, Suspense, lazy, Component, type ReactNode, type ErrorInfo } from 'react';
 import Header from './components/Header';
 import Hero from './components/Hero';
 
@@ -27,8 +27,7 @@ interface SafeComponentState {
 }
 
 // Error Boundary Component za izolacijo napak
-// Popravek: Eksplicitna uporaba React.Component za pravilno tipizacijo
-class SafeComponent extends React.Component<SafeComponentProps, SafeComponentState> {
+class SafeComponent extends Component<SafeComponentProps, SafeComponentState> {
   constructor(props: SafeComponentProps) {
     super(props);
     this.state = { hasError: false };

@@ -139,6 +139,35 @@ const ServicesPage: React.FC<ServicesPageProps> = ({ onBack }) => {
          </div>
       </div>
 
+      {/* Pricing Section (CENIK) */}
+      <div className="container mx-auto px-6 py-24">
+         <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-display font-bold text-white mb-4">
+               Transparenten <span className="text-luksa-cyan">Cenik</span>
+            </h2>
+            <p className="text-gray-400 text-lg">
+               Investicija v vašo digitalno prihodnost. Brez skritih stroškov.
+            </p>
+         </div>
+         
+         <div className="max-w-5xl mx-auto relative group">
+            {/* Background Glow */}
+            <div className="absolute -inset-2 bg-gradient-to-r from-luksa-cyan to-luksa-purple opacity-20 blur-2xl rounded-2xl group-hover:opacity-40 transition duration-700"></div>
+            
+            {/* Image Container */}
+            <div className="relative rounded-2xl overflow-hidden border border-white/10 bg-luksa-dark shadow-2xl">
+               <img 
+                 src="https://storage.googleapis.com/msgsndr/fNDNIwFlvmuqwn6vTTdq/media/6995dc64d614c92d47511064.webp" 
+                 alt="LUKSA AI Cenik Storitev" 
+                 className="w-full h-auto object-contain hover:scale-[1.01] transition-transform duration-700"
+               />
+               
+               {/* Overlay gradient at bottom for smooth integration */}
+               <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-luksa-dark to-transparent opacity-50 pointer-events-none"></div>
+            </div>
+         </div>
+      </div>
+
       {/* Final CTA */}
       <div className="container mx-auto px-6 py-20 text-center">
         <h2 className="text-2xl md:text-3xl font-display font-bold text-white mb-8">
