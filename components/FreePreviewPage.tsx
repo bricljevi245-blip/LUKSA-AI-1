@@ -94,7 +94,7 @@ Ekipa LUKSA AI`;
       };
 
       // 3. Pošiljanje - GHL Webhook
-      // keepalive: true zagotavlja, da zahteva preživi zaprtje strani
+      // Uporabljen specifičen URL iz zahteve
       fetch('https://services.leadconnectorhq.com/hooks/fNDNIwFlvmuqwn6vTTdq/webhook-trigger/d4e68b19-c441-44d8-93a5-9144d7e011d0', {
         method: 'POST',
         headers: { 
